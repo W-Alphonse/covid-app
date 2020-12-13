@@ -1,0 +1,1 @@
+pip install -r ./covcov/requirements.txt -t ./build --upgrade

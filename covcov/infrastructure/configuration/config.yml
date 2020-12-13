@@ -1,0 +1,21 @@
+# CONNEXION_STRING = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}?client_encoding=utf8&connect_timeout=10"
+# CONNEXION_STRING = "sqlite+pysqlite:////home/haa/pydev/aws-lambda/covid-app/db/covcov.db"
+# CONNEXION_STRING = "sqlite:///:memory:"
+#connection_string : postgresql+psycopg2://haa:haa@127.0.0.1:5432/postgres?client_encoding=utf8
+
+database:
+#    connection_string : postgresql+psycopg2://haa:haa@127.0.0.1:5432/postgres?client_encoding=utf8
+    connection_string : postgresql+psycopg2://haa:admin_123@covcovpostgresinstance.csfmhvbte7v3.eu-west-3.rds.amazonaws.com:5432/postgres?client_encoding=utf8
+    echo: True
+
+database_contact:
+    connection_string : postgresql+psycopg2://haa:haa@127.0.0.1:5432/postgres?client_encoding=utf8
+    echo: True
+
+logging:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level: INFO
+
+api:
+    port: 5000
+    host: 0.0.0.0
