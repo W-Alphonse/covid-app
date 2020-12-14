@@ -4,8 +4,7 @@
 #connection_string : postgresql+psycopg2://haa:haa@127.0.0.1:5432/postgres?client_encoding=utf8
 
 database:
-#    connection_string : postgresql+psycopg2://haa:haa@127.0.0.1:5432/postgres?client_encoding=utf8
-    connection_string : postgresql+psycopg2://haa:admin_123@covcovpostgresinstance.csfmhvbte7v3.eu-west-3.rds.amazonaws.com:5432/postgres?client_encoding=utf8
+    connection_string : postgresql+psycopg2://haa:haa@127.0.0.1:5432/postgres?client_encoding=utf8
     echo: True
 
 database_contact:
