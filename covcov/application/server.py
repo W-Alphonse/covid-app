@@ -1,5 +1,7 @@
 import datetime
 from flask import Flask, jsonify, request
+from flask_cors import cross_origin, CORS
+
 from covcov.infrastructure.configuration.config import config
 
 from covcov.application import route_dispatcher
@@ -10,10 +12,15 @@ from covcov.infrastructure.db.database import Database
 app = Flask(__name__)
 PORT = config["api"]["port"]
 HOST = config["api"]["host"]
+#
+#CORS(app)
+CORS(app, supports_credentials=True)
+#app.config['CORS_HEADERS'] = 'Content-Type'
 
 db = Database("database")
 
 @app.route("/company_domain", methods=["POST"])
+@cross_origin(headers=['Content-Type'])
 def subscription_api():
     return jsonify(route_dispatcher.dispatch(request.get_json(), db))
 

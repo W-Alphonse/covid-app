@@ -67,4 +67,5 @@ def compose_success_response(result) -> dict:
     STATUS_CODE: OK_200,
     "headers" : { "Content-Type" : "application/json"},
     BODY: str(result)
+    # BODY: result
   }
