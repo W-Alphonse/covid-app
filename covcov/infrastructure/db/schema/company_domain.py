@@ -6,13 +6,13 @@ from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy_utils import EmailType, PhoneNumber, CountryType
 
 from covcov.infrastructure.db import Base
-
+from covcov.infrastructure.db.schema import BaseTable
 
 # ========
 # Company
 # ========
 
-class Company(Base, SerializerMixin):
+class Company(Base, BaseTable, SerializerMixin):
   __tablename__ = 'company'
   # __table_args__ = {'useexisting': True}
   id = Column(Unicode(10), primary_key=True)
@@ -35,7 +35,7 @@ class Company(Base, SerializerMixin):
 #======
 # ROOM
 #======
-class Room(Base, SerializerMixin):
+class Room(Base, BaseTable, SerializerMixin):
   __tablename__ = 'room'
   id = Column(String(10), primary_key=True)
   description = Column(String(30))
@@ -54,7 +54,7 @@ class Room(Base, SerializerMixin):
 #======
 # ZONE
 #======
-class Zone(Base, SerializerMixin):
+class Zone(Base, BaseTable, SerializerMixin):
   __tablename__ = 'zone'
   id = Column(String(10), primary_key=True)
   description = Column(String(30))

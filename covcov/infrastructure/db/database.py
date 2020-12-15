@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker, ColumnProperty, Query
 from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.connexion import Connexion
 import covcov.infrastructure.db.schema.company_domain
+import covcov.infrastructure.db.schema.visit_domain
 
 logger = logging.getLogger(__name__)
 

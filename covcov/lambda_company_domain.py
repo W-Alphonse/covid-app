@@ -3,45 +3,29 @@ import logging
 from covcov.infrastructure.db.database import Database
 from covcov.application import route_dispatcher
 
-import sys
-
 logger = logging.getLogger(__name__)
-
-# https://www.postgresql.org/message-id/AANLkTim6p8vp0+h48-sC1Cu1govjQqi+WKsC_QnWdrwE@mail.gmail.com
-# https://github.com/jkehler/awslambda-psycopg2
-# https://github.com/jkehler/awslambda-psycopg2/issues/47
-# https://stackoverflow.com/questions/44855531/no-module-named-psycopg2-psycopg-modulenotfounderror-in-aws-lambda
-
-# print(f"sys.path: {sys.path}")
 db = Database("database")
 
 def handle(event, context) :
+  # print("** Event **\n" + str(event))
+  # #
+  # if isinstance(event,dict) :
+  #   for k,v in event.items() :
+  #     print(f'key:{k} - type(value):{type(v)} - value:{v} ')
 
-  # from psycopg2 import __version__ as pv
-  # print(f"xxx: {pv}")
-  # print( help('modules'))
-      # import importlib
-      # f, filename, description = importlib.find_module('psycopg2')
-      # print(f"psycopg2 file location: {filename} - description : {description}")
-
-  print("** Event **\n" + str(event))
   #
-  if isinstance(event,dict) :
-    for k,v in event.items() :
-      print(f'key:{k} - value:{v}')
-    # body = event['body']
-    # for k,v in body.items() :
-    #   print(f'body.key:{k} - body.value:{v}')
-  #
+  qry_params = None
   if 'body' in event :
-    print("** Contains Tag 'body' **")
-    body = event['body']
+    # print(f"** Event contains tag Body - Type(event[body]):{type(event['body'])} **")
+    body = json.loads(event['body'])  # --> Type(event[body]) : <class 'str'>
+    qry_params = event['queryStringParameters']
   else :
-    print("** Does not contain Tag 'body' **")
-    body = event
+    # print(f"** Event does not contain tag Body - Type(event):{type(event)} **")
+    body = event # --> Type(event) : <class 'dict'>
+  # print(f"** Après transformation, Body(type) ** : {type(body)}")
+  # print("** Body **\n" + str(body))
   #
-  ret = route_dispatcher.dispatch(body,db)
-  print(f'** route_dispatcher.dispatch ({type(ret)}) ** : {str(ret)}')
+  ret = route_dispatcher.dispatch(body,qry_params, db)
+  # print(f'** route_dispatcher.dispatch ({type(ret)}) ** : {str(ret)}')
   return ret
-  # return {"body" : "super" }
 

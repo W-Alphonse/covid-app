@@ -22,12 +22,18 @@ db = Database("database")
 @app.route("/company_domain", methods=["POST"])
 @cross_origin(headers=['Content-Type'])
 def subscription_api():
-    return jsonify(route_dispatcher.dispatch(request.get_json(), db))
+    return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, db))
+
+@app.route("/visit_domain", methods=["POST"])
+def visit_api():
+    return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, db))
 
 
-@app.route("/example", methods=["GET"])
+@app.route("/example", methods=["POST"])
 def example():
     try:
+        g = request.args
+        print(f"Type:{type(g)} - Question:{g['question']}")
         initial_number = request.get_json()["question"]
         answer = float(initial_number)*2
     except (ValueError, TypeError, KeyError):

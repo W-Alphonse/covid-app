@@ -2,6 +2,7 @@ import logging
 import traceback
 
 import covcov.infrastructure.db.schema.company_domain as cd
+import covcov.infrastructure.db.schema.visit_domain as vd
 from covcov.infrastructure.db.database import Database
 
 logger = logging.getLogger(__name__)
@@ -18,19 +19,25 @@ ERROR_DETAIL = "error_detail"
 
 
 
-def dispatch(payload : dict, db:Database) -> str:
+def dispatch(payload : dict, qry_params:dict, db:Database) -> str:
   try :
     # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
     method = payload['method']
     payload.pop('method')
+    # 1.a - type values : [company, room, zone, visit]
     type = next(iter(payload))
-    table = cd.Company if type == cd.Company.__tablename__ else \
+    table = vd.Visit   if type == vd.Visit.__tablename__ else \
+            cd.Company if type == cd.Company.__tablename__ else \
             cd.Room    if type == cd.Room.__tablename__ else cd.Zone
+    # 1.b - Add 'qry_params' to 'payload data'
+    if qry_params is not None:
+      payload[type].update(qry_params)
 
     # 2 - According to method type, decide how to route the Payload
     method_result="Success :-)"
     if method.upper() == 'POST' or method.upper() == 'PUT':
-      db.upsert_value([payload[type]],[table])
+      table.check_business_rules_for_upsert(payload[type])
+      db.insert_value([payload[type]],[table]) if table == vd.Visit else db.upsert_value([payload[type]],[table])
     elif method.upper() == 'GET' :
       method_result =  db.select_rows( [table(**payload[type])] , [table], ["password"])
     elif method.upper() == 'DELETE' :
