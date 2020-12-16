@@ -90,6 +90,6 @@ def compose_success_response(result) -> dict:
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
     },
-    BODY: str(result)
+    BODY: str(result).replace("'",'"')
     # BODY: result
   }
