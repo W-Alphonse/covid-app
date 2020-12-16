@@ -58,6 +58,12 @@ def _compose_error_response(ex: Exception) -> dict:
   logger.exception(ex)
   return {
     STATUS_CODE: KO_500,
+    'headers': {
+      "Content-Type" : "application/json",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
+    },
     ERROR: "Error of type [{}] occured : {}".format( type(ex), str(ex).replace('"', "'").replace('\n','').strip("' ") ),
     ERROR_DETAIL: "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )
   }
@@ -66,13 +72,24 @@ def _compose_error_unauthorized(user_id: str) -> dict:
   logger.exception(f"Unauthorized user '{user_id}' error")
   return {
     STATUS_CODE: KO_401,
+    'headers': {
+      "Content-Type" : "application/json",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
+    },
     ERROR: "Unauthorized user error",
   }
 
 def compose_success_response(result) -> dict:
   return {
     STATUS_CODE: OK_200,
-    "headers" : { "Content-Type" : "application/json"},
+    'headers': {
+      "Content-Type" : "application/json",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
+    },
     BODY: str(result)
     # BODY: result
   }
