@@ -1,0 +1,18 @@
+# 0 - Assemble the dependencies
+ rm -r ./build; mkdir ./build
+pip install -r ./covcov/requirements-aws.txt -t ./build/python --upgrade
+
+# 1 - Create the Zip of all dependencies
+mkdir -p ./build_zipped
+cd ./build; rm covcov-libs.zip; zip -r ../build_zipped/covcov-libs.zip .; cd ..
+
+# 2 - Create the Zip of the application
+rm covcov-app.zip; zip -g -r ./build_zipped/covcov-app.zip ./covcov
+
+# 3 - Add lambda(s) at the root of the zip
+cd covcov; zip -g ../build_zipped/covcov-app.zip ./lambda_company_domain.py; cd ..
+
+# 4 - Delete the unrequired artifacts
+zip -d ./build_zipped/covcov-app.zip covcov/lambda_company_domain.py
+zip -d ./build_zipped/covcov-app.zip covcov/application/server.py
+zip -d ./build_zipped/covcov-app.zip covcov/requirements-flask.txt

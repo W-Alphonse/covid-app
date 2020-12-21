@@ -8,6 +8,7 @@ from covcov.application import route_dispatcher
 
 # Flask object and properties
 from covcov.infrastructure.db.database import Database
+from covcov.infrastructure.cognito.idp_connexion import IdpConnexion
 
 app = Flask(__name__)
 PORT = config["api"]["port"]
@@ -18,15 +19,19 @@ CORS(app, supports_credentials=True)
 #app.config['CORS_HEADERS'] = 'Content-Type'
 
 db = Database("database")
+region         = config["cognito"]["COG_REGION"]
+user_pool_id   = config["cognito"]["COG_USER_POOL_ID"]
+app_client_id  = config["cognito"]["COG_APP_CLIENT_ID"]
+cognito_idp = IdpConnexion(region, user_pool_id, app_client_id)
 
 @app.route("/company_domain", methods=["POST"])
 @cross_origin(headers=['Content-Type'])
 def subscription_api():
-    return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, db))
+    return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, request.headers['auth-id-token'], db, cognito_idp))
 
 @app.route("/visit_domain", methods=["POST"])
 def visit_api():
-    return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, db))
+    return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, request.headers['auth-id-token'], db, cognito_idp))
 
 
 @app.route("/example", methods=["POST"])

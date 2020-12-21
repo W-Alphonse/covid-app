@@ -22,6 +22,7 @@ class Database :
     self.engine = Connexion(database_key).connect()
     self.session = sessionmaker(bind=self.engine)
 
+
   def reset_tables(self):
     logger.info(f'Reset the database.')
     Base.metadata.drop_all(self.engine)
@@ -30,8 +31,8 @@ class Database :
   def insert_value(self, datas:[typing.Union[dict, str]], tables:[Base]):
     with self.session_scope() as session:
       for i, data in enumerate(datas) :
-        if "password" in (data if isinstance(data,dict) else json.loads(data)) :
-          data["password"] = self._encrypt(data["password"])
+        # if "password" in (data if isinstance(data,dict) else json.loads(data)) :
+        #   data["password"] = self._encrypt(data["password"])
         insert_stmt = insert(tables[i]).values(data if isinstance(data,dict) else json.loads(data) )
         # logger.info(str(insert_stmt))
         session.execute(insert_stmt)
@@ -40,8 +41,8 @@ class Database :
   def upsert_value_with_overwrite(self, datas:[typing.Union[dict, str]], tables:[Base]):
     with self.session_scope() as session:
       for i, data in enumerate(datas) :
-        if "password" in (data if isinstance(data,dict) else json.loads(data)) :
-          data["password"] = self._encrypt(data["password"])
+        # if "password" in (data if isinstance(data,dict) else json.loads(data)) :
+        #   data["password"] = self._encrypt(data["password"])
         insert_stmt = insert(tables[i]).values(data if isinstance(data,dict) else json.loads(data) )
         columns_to_exlcude_from_update = [col.name for col in tables[i].__table__.c
                                           if col not in list(tables[i].__table__.primary_key.columns) and col.name not in data.keys()]
@@ -57,8 +58,8 @@ class Database :
       for i, data in enumerate(datas) :
         already_exist = session.query(literal(True)).filter(session.query(tables[i]).filter(tables[i].id == data['id']).exists()).scalar()
         if already_exist:
-          if "password" in (data if isinstance(data,dict) else json.loads(data)) :
-            data["password"] = self._encrypt(data["password"])
+          # if "password" in (data if isinstance(data,dict) else json.loads(data)) :
+          #   data["password"] = self._encrypt(data["password"])
           session.execute( update(tables[i]).where(tables[i].id == data['id']).values(datas[i]) )
         else :
           self.insert_value(datas, tables)
@@ -81,10 +82,10 @@ class Database :
     return rows
 
 
-  def authenticate(self, user_data:dict, user_table:Base):
-    with self.session_scope() as session:
-      return  session.query(literal(True)).filter(session.query(user_table).filter(user_table.email == user_data['email'],
-                                                  user_table.password == self._encrypt(user_data['password'])).exists()).scalar() == True
+  # def authenticate(self, user_data:dict, user_table:Base):
+  #   with self.session_scope() as session:
+  #     return  session.query(literal(True)).filter(session.query(user_table).filter(user_table.email == user_data['email'],
+  #                                                 user_table.password == self._encrypt(user_data['password'])).exists()).scalar() == True
 
 
   def _remove_dict_values(self, dict_to_clean:{}, values_to_remove:[]) -> dict:

@@ -14,7 +14,7 @@ class Visit(Base, BaseTable, SerializerMixin):
   __tablename__ = 'visit'
   #
   id = Column(Unicode(10), primary_key=True)
-  company_id  = Column(Unicode(10), ForeignKey("company.id"), nullable=False)
+  company_id  = Column(Unicode(BaseTable.EMAIL_SIZE), ForeignKey("company.id"), nullable=False)
   room_id     = Column(Unicode(10), ForeignKey("room.id"), nullable=False)
   zone_id     = Column(Unicode(10), ForeignKey("zone.id"), nullable=False)
   #

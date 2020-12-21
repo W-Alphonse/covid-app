@@ -1,12 +1,11 @@
 from sqlalchemy import Column, Integer, Sequence, Unicode, String, ForeignKey, event
-# from sqlalchemy import create_engine
-from sqlalchemy.orm import relationship # , sessionmaker
-# from sqlalchemy.orm import Session
+from sqlalchemy.orm import relationship
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy_utils import EmailType, PhoneNumber, CountryType
 
 from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.schema import BaseTable
+
 
 # ========
 # Company
@@ -14,15 +13,14 @@ from covcov.infrastructure.db.schema import BaseTable
 
 class Company(Base, BaseTable, SerializerMixin):
   __tablename__ = 'company'
-  # __table_args__ = {'useexisting': True}
-  id = Column(Unicode(10), primary_key=True)
-  password = Column(Unicode(128), nullable=False)
+  id = Column(Unicode(BaseTable.EMAIL_SIZE), primary_key=True)
+  # password = Column(Unicode(128), nullable=False)
   siret    = Column(Unicode(14))
   address  = Column(Unicode(300), nullable=False)
   zip_code = Column(Unicode(10), nullable=False)
   country_code = Column(Unicode(2), default='FR', nullable=False)
   phone_number = Column(Unicode(20))
-  email = Column(EmailType(length=50),  nullable=False, unique=True)
+  email = Column(EmailType(length=BaseTable.EMAIL_SIZE),  unique=True)
   contact_fname = Column(Unicode(20))
   contact_lname = Column(Unicode(20))
   url = Column(Unicode(128))
@@ -39,7 +37,7 @@ class Room(Base, BaseTable, SerializerMixin):
   __tablename__ = 'room'
   id = Column(String(10), primary_key=True)
   description = Column(String(30))
-  company_id  = Column(Unicode(10), ForeignKey("company.id", ondelete='CASCADE'), nullable=False)
+  company_id  = Column(Unicode(BaseTable.EMAIL_SIZE), ForeignKey("company.id", ondelete='CASCADE'), nullable=False)
   #
   zones   = relationship("Zone", cascade="all, delete-orphan", backref="room")
   # company = relationship("Company", backref=backref("rooms", cascade="all, delete-orphan"))

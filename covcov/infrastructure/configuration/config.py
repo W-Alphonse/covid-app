@@ -5,6 +5,8 @@ import yaml
 import logging
 
 ENVIRONMENT = os.getenv("COVCOV_CONFIG_PATH")
+print("CONFIG - **ENVIRONMENT**")
+
 
 # 1 - Locate 'config_file_path'
 if ENVIRONMENT:
