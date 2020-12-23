@@ -100,6 +100,8 @@ class Database :
     return cleaned_dict
 
   def _remove_dict_keys(self, dict_to_clean:{}, columns_to_filter:[str]) -> dict:
+    if columns_to_filter is None or len(columns_to_filter) == 0 :
+      return dict_to_clean;
     cleaned_dict = {}
     for k, v in dict_to_clean.items():
       if isinstance(v, dict):

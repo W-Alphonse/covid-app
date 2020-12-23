@@ -14,13 +14,20 @@ OK_200 = 200
 KO_401 = 401
 KO_500 = 500
 #
-BODY  = "body"
-ERROR = "error"
+HEADERS = "headers"
+BODY    = "body"
+ERROR   = "error"
 ERROR_DETAIL = "error_detail"
+#
+HEADERS_VALUES = {
+  "Content-Type" : "application/json",
+  "Access-Control-Allow-Headers": "*",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
+}
 
 
-
-def dispatch(payload : dict, qry_params:dict, auth_token:str, db:Database, cognito_idp: IdpConnexion) -> str:
+def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> str:
   try :
     # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
     method = payload['method']
@@ -33,17 +40,18 @@ def dispatch(payload : dict, qry_params:dict, auth_token:str, db:Database, cogni
     # 1.b - Add 'qry_params' to 'payload data'
     if qry_params is not None and bool(qry_params):
       payload[type].update(qry_params)
-    # 1.c
+    # 1.c - Compute "Company/Ars" ID by extracting 'sub' from the Authentication-token
     if table == cd.Company :
-      payload[type].update({'id': cognito_idp.get_claims(auth_token, 'id')['email']})
+      payload[type].update({'id': auth_claims['sub']})
 
     # 2 - According to method type, decide how to route the Payload
     method_result="Success :-)"
     if method.upper() == 'POST' or method.upper() == 'PUT' :
+      table.enhance_payload_with_auth_token(payload[type], auth_claims)
       table.check_business_rules_for_upsert(payload[type])
       db.insert_value([payload[type]],[table]) if table == vd.Visit else db.upsert_value([payload[type]],[table])
     elif method.upper() == 'GET' :
-      method_result =  db.select_rows( [table(**payload[type])] , [table], ["password"])
+      method_result =  db.select_rows( [table(**payload[type])] , [table])
     elif method.upper() == 'DELETE' :
       db.delete_rows([payload[type]],[table])
     # elif method.upper() == 'CONNECT' : # Authenticate over a database
@@ -63,12 +71,7 @@ def _compose_error_response(ex: Exception) -> dict:
   logger.exception(ex)
   return {
     STATUS_CODE: KO_500,
-    'headers': {
-      "Content-Type" : "application/json",
-      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,auth-id-token",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
-    },
+    HEADERS : HEADERS_VALUES,
     ERROR: "Error of type [{}] occured : {}".format( type(ex), str(ex).replace('"', "'").replace('\n','').strip("' ") ),
     ERROR_DETAIL: "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )
   }
@@ -77,24 +80,13 @@ def _compose_error_response(ex: Exception) -> dict:
 #   logger.exception(f"Unauthorized user '{user_id}' error")
 #   return {
 #     STATUS_CODE: KO_401,
-#     'headers': {
-#       "Content-Type" : "application/json",
-#       "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,auth-id-token",
-#       "Access-Control-Allow-Origin": "*",
-#       "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
-#     },
+#     HEADERS: HEADERS_VALUES,
 #     ERROR: "Unauthorized user error",
 #   }
 
 def compose_success_response(result) -> dict:
   return {
     STATUS_CODE: OK_200,
-    'headers': {
-      "Content-Type" : "application/json",
-      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,auth-id-token",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
-    },
+    HEADERS: HEADERS_VALUES,
     BODY: str(result).replace("'",'"')
-    # BODY: result
   }

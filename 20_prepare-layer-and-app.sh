@@ -10,9 +10,11 @@ cd ./build; rm covcov-libs.zip; zip -r ../build_zipped/covcov-libs.zip .; cd ..
 rm covcov-app.zip; zip -g -r ./build_zipped/covcov-app.zip ./covcov
 
 # 3 - Add lambda(s) at the root of the zip
-cd covcov; zip -g ../build_zipped/covcov-app.zip ./lambda_company_domain.py; cd ..
+cd covcov; zip -g ../build_zipped/covcov-app.zip ./lambda_company_domain.py
+zip -g ../build_zipped/covcov-app.zip ./lambda_visit_domain.py; cd ..
 
 # 4 - Delete the unrequired artifacts
 zip -d ./build_zipped/covcov-app.zip covcov/lambda_company_domain.py
+zip -d ./build_zipped/covcov-app.zip covcov/lambda_visit_domain.py
 zip -d ./build_zipped/covcov-app.zip covcov/application/server.py
 zip -d ./build_zipped/covcov-app.zip covcov/requirements-flask.txt

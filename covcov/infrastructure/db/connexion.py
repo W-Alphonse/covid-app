@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from covcov.infrastructure.configuration.config import config
+from covcov.infrastructure.configuration import config
 
 class Connexion(object):
   def __init__(self, database_key:str):

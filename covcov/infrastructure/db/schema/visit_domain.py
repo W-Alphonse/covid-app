@@ -3,7 +3,7 @@ from sqlalchemy import Column, Unicode, ForeignKey, DateTime
 from sqlalchemy_serializer import SerializerMixin
 
 from covcov.infrastructure.db import Base
-from covcov.infrastructure.db.schema import BaseTable
+from covcov.infrastructure.db.schema.base_domain import BaseTable
 
 
 # ========
@@ -14,7 +14,7 @@ class Visit(Base, BaseTable, SerializerMixin):
   __tablename__ = 'visit'
   #
   id = Column(Unicode(10), primary_key=True)
-  company_id  = Column(Unicode(BaseTable.EMAIL_SIZE), ForeignKey("company.id"), nullable=False)
+  company_id  = Column(Unicode(BaseTable.SUB_SIZE), ForeignKey("company.id"), nullable=False)
   room_id     = Column(Unicode(10), ForeignKey("room.id"), nullable=False)
   zone_id     = Column(Unicode(10), ForeignKey("zone.id"), nullable=False)
   #
@@ -32,10 +32,8 @@ class Visit(Base, BaseTable, SerializerMixin):
     if (attr.get('company_id') is None) or (attr.get('room_id') is None) or (attr.get('zone_id') is None)  :
       raise ValueError(f"'Visit' entity instance should reference a well identified location => Indicate 'company_id, room_id and zone_id' ")
     #
-    if attr.get('visitor_phone_number') is None or  \
-       (    (attr.get('visitor_fname') is None or attr.get('visitor_lname') is None) \
-         and (attr.get('visitor_id') is None)  ):
-      raise ValueError(f"'Visit' entity instance should reference a well identified client => Either indicate ('first name, last name, phone_number') or ('visitor_id, phone_number') ")
+    if ( (attr.get('visitor_phone_number') is None)  and (attr.get('visitor_id') is None)  ):
+      raise ValueError(f"'Visit' entity instance should reference a well identified client => Either indicate 'phone_number' or 'visitor_id' ")
 
 
   @classmethod

@@ -2,7 +2,7 @@ import datetime
 from flask import Flask, jsonify, request
 from flask_cors import cross_origin, CORS
 
-from covcov.infrastructure.configuration.config import config
+from covcov.infrastructure.configuration import config
 
 from covcov.application import route_dispatcher
 
@@ -27,11 +27,11 @@ cognito_idp = IdpConnexion(region, user_pool_id, app_client_id)
 @app.route("/company_domain", methods=["POST"])
 @cross_origin(headers=['Content-Type'])
 def subscription_api():
-    return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, request.headers['auth-id-token'], db, cognito_idp))
+    return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'],'id'), db))
 
 @app.route("/visit_domain", methods=["POST"])
 def visit_api():
-    return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, request.headers['auth-id-token'], db, cognito_idp))
+    return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, None, db))
 
 
 @app.route("/example", methods=["POST"])

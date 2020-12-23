@@ -2,7 +2,7 @@ import json
 import logging
 from covcov.infrastructure.db.database import Database
 from covcov.application import route_dispatcher
-from covcov.infrastructure.configuration.config import config
+from covcov.infrastructure.configuration import config
 from covcov.infrastructure.cognito.idp_connexion import IdpConnexion
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,8 @@ def handle(event, context) :
   #     print(f'HEADER -> key:{k} - type(value):{type(v)} - value:{v} ')
   # print(f'** event[headers] ** ->  type(value):{type(event["headers"])} - value:{str(event["headers"])} ')
 
-  ret = route_dispatcher.dispatch(body, qry_params, event['headers']['auth-id-token'], db, cognito_idp)
+  ret = route_dispatcher.dispatch(body, qry_params, cognito_idp.get_claims(event['headers']['auth-id-token'],'id'), db)
+  # ret = route_dispatcher.dispatch(body, qry_params, event['headers']['auth-id-token'], db, cognito_idp)
   # print(f'** route_dispatcher.dispatch ({type(ret)}) ** : {str(ret)}')
   return ret
 

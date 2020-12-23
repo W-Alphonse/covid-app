@@ -10,9 +10,11 @@ cd ./build; rm covcov-aws.zip; zip -r ../build_zipped/covcov-aws.zip .; cd ..
 zip -g -r ./build_zipped/covcov-aws.zip ./covcov
 
 # 3 - Add lambda(s) at the root of the zip
-cd covcov; zip -g ../build_zipped/covcov-aws.zip ./lambda_company_domain.py; cd ..
+cd covcov; zip -g ../build_zipped/covcov-aws.zip ./lambda_company_domain.py
+zip -g ../build_zipped/covcov-aws.zip ./lambda_visit_domain.py; cd ..
 
 # 4 - Delete the unrequired artifacts
 zip -d ./build_zipped/covcov-aws.zip covcov/lambda_company_domain.py
+zip -d ./build_zipped/covcov-aws.zip covcov/lambda_visit_domain.py
 zip -d ./build_zipped/covcov-aws.zip covcov/application/server.py
 zip -d ./build_zipped/covcov-aws.zip covcov/requirements-flask.txt
