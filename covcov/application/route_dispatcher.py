@@ -4,7 +4,6 @@ import traceback
 import covcov.infrastructure.db.schema.company_domain as cd
 import covcov.infrastructure.db.schema.visit_domain as vd
 from covcov.infrastructure.db.database import Database
-from covcov.infrastructure.cognito.idp_connexion import IdpConnexion
 
 logger = logging.getLogger(__name__)
 #
@@ -30,15 +29,15 @@ HEADERS_VALUES = {
 def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> str:
   try :
     # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
-    method = payload['method']
-    payload.pop('method')
+    method = payload.pop('method')
     # 1.a - type values : [company, room, zone, visit]
     type = next(iter(payload))
     table = vd.Visit   if type == vd.Visit.__tablename__ else \
             cd.Company if type == cd.Company.__tablename__ else \
-            cd.Room    if type == cd.Room.__tablename__ else cd.Zone
+            cd.Room    if type == cd.Room.__tablename__ else \
+            cd.Zone    if type == cd.Zone.__tablename__ else None
     # 1.b - Add 'qry_params' to 'payload data'
-    if qry_params is not None and bool(qry_params):
+    if bool(qry_params):
       payload[type].update(qry_params)
     # 1.c - Compute "Company/Ars" ID by extracting 'sub' from the Authentication-token
     if table == cd.Company :
@@ -60,10 +59,9 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
     elif method.upper() == 'RESET_TABLES' :
       db.reset_tables()
     else :
-      raise Exception(f"Unrecognized 'method' value '{method}'. Value should be one of [POST, PUT, DELETE, GET, CONNECT]")
+      raise Exception(f"Unrecognized 'method' value '{method}' or table '{str(type)}'. Value should be one of [POST, PUT, DELETE, GET, CONNECT]")
     return compose_success_response(method_result)
   except Exception as ex:
-    print("dispatch - Exception_2")
     return _compose_error_response(ex)
 
 
