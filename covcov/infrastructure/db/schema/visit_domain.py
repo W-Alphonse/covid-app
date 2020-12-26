@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Unicode, ForeignKey, DateTime
+from sqlalchemy import Column, Unicode, ForeignKey, DateTime, Integer, Sequence, BigInteger
 from sqlalchemy_serializer import SerializerMixin
 
 from covcov.infrastructure.db import Base
@@ -12,8 +12,10 @@ from covcov.infrastructure.db.schema.base_domain import BaseTable
 
 class Visit(Base, BaseTable, SerializerMixin):
   __tablename__ = 'visit'
+  # __table_args__ = {'extend_existing': True}
+
   #
-  id = Column(Unicode(10), primary_key=True)
+  id = Column(BigInteger, primary_key=True)
   company_id  = Column(Unicode(BaseTable.SUB_SIZE), ForeignKey("company.id"), nullable=False)
   room_id     = Column(Unicode(10), ForeignKey("room.id"), nullable=False)
   zone_id     = Column(Unicode(10), ForeignKey("zone.id"), nullable=False)
