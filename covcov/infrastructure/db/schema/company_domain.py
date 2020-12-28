@@ -13,8 +13,9 @@ from covcov.infrastructure.db.schema.base_domain import BaseTable
 
 class Company(Base, BaseTable, SerializerMixin):
   __tablename__ = 'company'
+  # __table_args__ = {'extend_existing': True}
+
   id = Column(Unicode(BaseTable.SUB_SIZE), primary_key=True)
-  # password = Column(Unicode(128), nullable=False)
   siret    = Column(Unicode(14))
   address  = Column(Unicode(300), nullable=False)
   zip_code = Column(Unicode(10), nullable=False)
@@ -41,6 +42,8 @@ class Company(Base, BaseTable, SerializerMixin):
 #======
 class Room(Base, BaseTable, SerializerMixin):
   __tablename__ = 'room'
+  # __table_args__ = {'extend_existing': True}
+
   id = Column(String(10), primary_key=True)
   description = Column(String(30))
   company_id  = Column(Unicode(BaseTable.SUB_SIZE), ForeignKey("company.id", ondelete='CASCADE'), nullable=False)
@@ -65,6 +68,8 @@ class Room(Base, BaseTable, SerializerMixin):
 #======
 class Zone(Base, BaseTable, SerializerMixin):
   __tablename__ = 'zone'
+  # __table_args__ = {'extend_existing': True}
+
   id = Column(String(10), primary_key=True)
   description = Column(String(30))
   room_id = Column(Unicode(10), ForeignKey("room.id", ondelete='CASCADE'), nullable=False)
@@ -76,8 +81,45 @@ class Zone(Base, BaseTable, SerializerMixin):
   def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.description}, FK.room_id={self.room_id})"
 
+# "company sub": "caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e" | "...f" | "...g"
 if __name__ == '__main__':
   pass
+
+  # from covcov.infrastructure.db.database import Database
+  # db = Database("database")
+  # # Creation Company_1
+  # db.insert_value(['{"id":"caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e", "address": "0 - 24 Avenue Frayce", "zip_code":"93401", "phone_number":"0661794641"}'], [Company])
+  # db.insert_value(['{"id":"room_0.1", "description":"ROOM_0.1_", "company_id":"caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e"}'], [Room])
+  # db.insert_value(['{"id":"z_0.1.1", "description":"Z_0.1.1", "room_id":"room_0.1"}'], [Zone])
+  # db.insert_value(['{"id":"z_0.1.2", "description":"Z_0.1.2", "room_id":"room_0.1"}'], [Zone])
+  # db.insert_value(['{"id":"z_0.1.3", "description":"Z_0.1.3", "room_id":"room_0.1"}'], [Zone])
+  # #
+  # db.insert_value(['{"id":"room_0.2", "description":"ROOM_0.2_", "company_id":"caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e"}'], [Room])
+  # db.insert_value(['{"id":"z_0.2.1", "description":"Z_0.2.1", "room_id":"room_0.2"}'], [Zone])
+  # db.insert_value(['{"id":"z_0.2.2", "description":"Z_0.2.2", "room_id":"room_0.2"}'], [Zone])
+  # #
+  # db.insert_value(['{"id":"room_0.3", "description":"ROOM_0.3_", "company_id":"caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e"}'], [Room])
+  # db.insert_value(['{"id":"z_0.3.1", "description":"Z_0.3.1", "room_id":"room_0.3"}'], [Zone])
+  #
+  # # Creation Company_2
+  # db.insert_value(['{"id":"caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1f", "address": "2 - 24 Avenue Frayce", "zip_code":"93402", "phone_number":"0661794641-2"}'], [Company])
+  # db.insert_value(['{"id":"room_2.1", "description":"ROOM_2.1_", "company_id":"caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1f"}'], [Room])
+  # db.insert_value(['{"id":"z_2.1.1", "description":"Z_2.1.1", "room_id":"room_2.1"}'], [Zone])
+  # db.insert_value(['{"id":"z_2.1.2", "description":"Z_2.1.2", "room_id":"room_2.1"}'], [Zone])
+  # db.insert_value(['{"id":"z_2.1.3", "description":"Z_2.1.3", "room_id":"room_2.1"}'], [Zone])
+  # #
+  # db.insert_value(['{"id":"room_2.2", "description":"ROOM_2.2_", "company_id":"caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1f"}'], [Room])
+  # db.insert_value(['{"id":"z_2.2.1", "description":"Z_2.2.1", "room_id":"room_2.2"}'], [Zone])
+  # db.insert_value(['{"id":"z_2.2.2", "description":"Z_2.2.2", "room_id":"room_2.2"}'], [Zone])
+  #
+  # # Creation Company_3
+  # db.insert_value(['{"id":"caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1g", "address": "3 - 24 Avenue Frayce", "zip_code":"93403", "phone_number":"0661794641-3"}'], [Company])
+  # db.insert_value(['{"id":"room_3.1", "description":"ROOM_3.1_", "company_id":"caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1g"}'], [Room])
+  # db.insert_value(['{"id":"z_3.1.1", "description":"Z_3.1.1", "room_id":"room_3.1"}'], [Zone])
+  # db.insert_value(['{"id":"z_3.1.2", "description":"Z_3.1.2", "room_id":"room_3.1"}'], [Zone])
+
+
+
   # Populate a few tables
   # db.insert_value(['{"id":"comp_2", "address": "24 Avenue Frayce", "zip_code":"93400"}'], [Company])
   # session = sessionmaker(bind=engine)

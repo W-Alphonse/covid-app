@@ -41,6 +41,7 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
       payload[type].update(qry_params)
     # 1.c - Compute "Company/Ars" ID by extracting 'sub' from the Authentication-token
     if table == cd.Company :
+    # if (table == cd.Company) and ( payload[type].get('id') is None) :
       payload[type].update({'id': auth_claims['sub']})
 
     # 2 - According to method type, decide how to route the Payload
@@ -51,6 +52,9 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
       db.insert_value([payload[type]],[table]) if table == vd.Visit else db.upsert_value([payload[type]],[table])
     elif method.upper() == 'GET' :
       method_result =  db.select_rows( [table(**payload[type])] , [table])
+    elif method.upper() == 'C_CCONTACT' :
+      # payload[type].update({'company_id': auth_claims['sub']})
+      method_result = db.native_select_rows(vd.Visit.compose_ccontact_sql(table(**payload[type])))
     elif method.upper() == 'DELETE' :
       db.delete_rows([payload[type]],[table])
     # elif method.upper() == 'CONNECT' : # Authenticate over a database

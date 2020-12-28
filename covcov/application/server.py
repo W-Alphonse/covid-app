@@ -30,8 +30,14 @@ def subscription_api():
     return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'],'id'), db))
 
 @app.route("/visit_domain", methods=["POST"])
+@cross_origin(headers=['Content-Type'])
 def visit_api():
     return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, None, db))
+
+@app.route("/c_ccontact", methods=["POST"])
+@cross_origin(headers=['Content-Type'])
+def c_ccontact_api():
+    return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'],'id'), db))
 
 
 @app.route("/example", methods=["POST"])

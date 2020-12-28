@@ -81,6 +81,11 @@ class Database :
           rows.append( self._remove_dict_keys( self._remove_dict_values(row.to_dict(), [None]) , columns_to_filter) )
     return rows
 
+  def native_select_rows(self, sql_query:str) :
+    rows = []
+    result = self.engine.execute(sql_query)
+    rows = result.fetchall()
+    return rows
 
   # def authenticate(self, user_data:dict, user_table:Base):
   #   with self.session_scope() as session:
