@@ -54,7 +54,8 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
       method_result =  db.select_rows( [table(**payload[type])] , [table])
     elif method.upper() == 'C_CCONTACT' :
       # payload[type].update({'company_id': auth_claims['sub']})
-      method_result = db.native_select_rows(vd.Visit.compose_ccontact_sql(table(**payload[type])))
+      method_result = db.native_select_rows(vd.Visit.compose_ccontact_sql(payload[type]))
+      # method_result = db.native_select_rows(vd.Visit.compose_ccontact_sql(table(**payload[type])))
     elif method.upper() == 'DELETE' :
       db.delete_rows([payload[type]],[table])
     # elif method.upper() == 'CONNECT' : # Authenticate over a database

@@ -5,16 +5,23 @@ from sqlalchemy_serializer import SerializerMixin
 from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.schema.base_domain import BaseTable
 
-
-raw_select = "SELECT v.company_id, v.room_id, v.zone_id, v.phone_number, v.visit_datetime, v.visitor_id, v.fname, v.lname {}"
-summary_select = "SELECT count(distinct(v.phone_number)) as nb_cases, count(distinct(v.zone_id)) as nb_zones, max(v.visit_datetime) - min(v.visit_datetime) nb_days {}"
-contact_select = "SELECT v.fname, v.lname, v.phone_number, v.visitor_id, count(distinct(v.zone_id)) as nb_zones, min(v.visit_datetime) as min_date, max(v.visit_datetime) as max_date {}"
+# v1 --> Alias of the infected Visitor / v2 --> Alias of other Visitors
+raw_select     = "SELECT v2.company_id, v2.room_id, v2.zone_id, v2.phone_number, v2.visit_datetime, v2.visitor_id, v2.fname, v2.lname {}"
+summary_select = "SELECT count(distinct(v2.phone_number)) as nb_cases, count(distinct(v2.zone_id)) as nb_zones, max(v2.visit_datetime) - min(v2.visit_datetime) nb_days {}"
+contact_select = "SELECT v2.fname, v2.lname, v2.phone_number, v2.visitor_id, count(distinct(v2.zone_id)) as nb_zones, min(v2.visit_datetime) as min_date, max(v2.visit_datetime) as max_date {}"
+              #  select v2.fname, v2.lname, v2.phone_number, v2.visitor_id, count(distinct(v2.zone_id)) as nb_zones,
+# nb_cases = "select count(1) FROM public.visit as vv1 inner join public.visit as vv2 on vv1.zone_id = vv2.zone_id
+# where
+# vv1.phone_number = '3262_' and vv2.phone_number <> '3262_' and
+# vv2.zone_id = vv1.zone_id and vv2.phone_number = v2.phone_number"
 #
-sub_qry = "FROM visit as v where v.id in (select v2.id FROM visit as v1 inner join visit as v2 on v1.zone_id = v2.zone_id where {})"
-group_by = " GROUP BY v.phone_number, v.visitor_id, v.fname, v.lname"
+# main_qry = "FROM visit as v where v.id in (select v2.id FROM visit as v1 inner join visit as v2 on v1.zone_id = v2.zone_id where {})"
+main_qry = "FROM public.visit as v1 inner join public.visit as v2 on v1.zone_id = v2.zone_id where {}"
+group_by = " GROUP BY v2.phone_number, v2.visitor_id, v2.fname, v2.lname"
 #
 criteria_phone   = "(v1.phone_number = '{}' and v2.phone_number <> '{}')"
 criteria_visitor = "(v1.visitor_id = '{}' and v2.visitor_id <> '{}') "
+criteria_visit_dt = "(v2.visit_datetime between v1.visit_datetime - interval '{} hour' and v1.visit_datetime + interval '{} hour')"
 # TODO: TEST Scoped search to Company => Add 'company_id' as selection criteria
 
 
@@ -49,21 +56,24 @@ class Visit(Base, BaseTable, SerializerMixin):
 
   @classmethod
   def compose_ccontact_sql_raw(cls, criteria:dict) -> str :
-    phone = criteria.phone_number
-    vid =  criteria.visitor_id
+    phone = criteria.get('phone_number')
+    vid =  criteria.get('visitor_id')
+    hbv = 1 if criteria.get('h_before_visit') is None else criteria.get('h_before_visit')
+    hav = 1 if criteria.get('h_after_visit') is None else criteria.get('h_after_visit')
+    #
     criteria_sql = criteria_visitor.format(vid, vid)   if phone == None else \
                    criteria_phone.format(phone, phone) if vid == None else \
                    '{} or {}'.format(criteria_visitor.format(vid, vid)  , criteria_phone.format(phone, phone))
-    if criteria.company_id is not None :
-      criteria_sql = '{} and {}'.format(criteria.company_id, criteria_sql)
-    sub_select = sub_qry.format(criteria_sql)
+    criteria_sql = '{} and {}'.format(criteria_sql, criteria_visit_dt.format(hbv,hav) )
+    if criteria.get('company_id') is not None :
+      criteria_sql = '{} and {}'.format(criteria.get('company_id'), criteria_sql)
     #
-    # raw_select = "SELECT v.company_id, v.room_id, v.zone_id, v.phone_number, v.visit_datetime, v.visitor_id, v.fname, v.lname {}"
-    # sub_select = " FROM visit as v where v.id in (select v2.id FROM visit as v1 inner join visit as v2 on v1.zone_id = v2.zone_id where {})"
-
-    # return raw_select.format(sub_select)
-    # return summary_select.format(sub_select)
-    return contact_select.format(sub_select) + group_by
+    qry_from = main_qry.format(criteria_sql)  # main_qry -> "FROM visit as v where v.id in (select v2.id FROM visit as v1 inner join visit as v2 on v1.zone_id = v2.zone_id where {})"
+    #
+    # GARDER
+    # return raw_select.format(qry_from)
+    # return summary_select.format(qry_from)
+    return contact_select.format(qry_from) + group_by
 
   @classmethod
   def check_business_rules_for_upsert(cls, attr:dict):

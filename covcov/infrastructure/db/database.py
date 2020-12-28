@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from sqlalchemy import literal, update
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm import sessionmaker, ColumnProperty, Query
 
 from covcov.infrastructure.db import Base
@@ -28,7 +29,7 @@ class Database :
     Base.metadata.drop_all(self.engine)
     Base.metadata.create_all(self.engine)
 
-  def insert_value(self, datas:[typing.Union[dict, str]], tables:[Base]):
+  def insert_value(self, datas:[typing.Union[dict, str]], tables:[DeclarativeMeta]):
     with self.session_scope() as session:
       for i, data in enumerate(datas) :
         # if "password" in (data if isinstance(data,dict) else json.loads(data)) :
@@ -38,7 +39,7 @@ class Database :
         session.execute(insert_stmt)
 
 
-  def upsert_value_with_overwrite(self, datas:[typing.Union[dict, str]], tables:[Base]):
+  def upsert_value_with_overwrite(self, datas:[typing.Union[dict, str]], tables:[DeclarativeMeta]):
     with self.session_scope() as session:
       for i, data in enumerate(datas) :
         # if "password" in (data if isinstance(data,dict) else json.loads(data)) :
@@ -53,7 +54,7 @@ class Database :
         session.execute(do_upsert_stmt)
 
 
-  def upsert_value(self, datas:[typing.Union[dict, str]], tables:[Base]):
+  def upsert_value(self, datas:[typing.Union[dict, str]], tables:[DeclarativeMeta]):
     with self.session_scope() as session:
       for i, data in enumerate(datas) :
         already_exist = session.query(literal(True)).filter(session.query(tables[i]).filter(tables[i].id == data['id']).exists()).scalar()
@@ -66,14 +67,14 @@ class Database :
 
 
 
-  def delete_rows(self, datas:[dict], tables:[Base]):
+  def delete_rows(self, datas:[Base], tables:[DeclarativeMeta]):
     with self.session_scope() as session:
       for i, data in enumerate(datas) :
         # delete_stmt = delete(tables[i]).where(id = data.row['id'])
         session.query(tables[i]).filter(tables[i].id == data['id']).delete()
 
 
-  def select_rows(self, datas:[dict], tables:[Base], columns_to_filter:[str]=None) :
+  def select_rows(self, datas:[Base], tables:[DeclarativeMeta], columns_to_filter:[str]=None) :
     rows = []
     with self.session_scope() as session:
       for i, data in enumerate(datas) :
