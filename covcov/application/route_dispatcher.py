@@ -52,10 +52,15 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
       db.insert_value([payload[type]],[table]) if table == vd.Visit else db.upsert_value([payload[type]],[table])
     elif method.upper() == 'GET' :
       method_result =  db.select_rows( [table(**payload[type])] , [table])
-    elif method.upper() == 'C_CCONTACT' :
-      # payload[type].update({'company_id': auth_claims['sub']})
-      method_result = db.native_select_rows(vd.Visit.compose_ccontact_sql(payload[type]))
-      # method_result = db.native_select_rows(vd.Visit.compose_ccontact_sql(table(**payload[type])))
+    elif (method.upper() == 'C_CCONTACT') or (method.upper() == 'A_CCONTACT') :
+      if method.upper() == 'C_CCONTACT' :
+        payload[type].update({'company_id': auth_claims['sub']})
+      sql_stmts_kv = vd.Visit.compose_ccontact_sqls(payload[type])
+      result_list = db.native_select_rows(list(sql_stmts_kv.values()), 0)
+      method_result = vd.Visit.compose_ccontact_result(list(sql_stmts_kv.keys()), result_list)
+      # method_result = result_list
+    # elif method.upper() == 'A_CCONTACT' :
+    #   method_result = db.native_select_rows(vd.Visit.compose_ccontact_sqls(payload[type]))
     elif method.upper() == 'DELETE' :
       db.delete_rows([payload[type]],[table])
     # elif method.upper() == 'CONNECT' : # Authenticate over a database

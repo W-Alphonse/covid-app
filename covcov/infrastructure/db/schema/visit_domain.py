@@ -6,26 +6,24 @@ from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.schema.base_domain import BaseTable
 
 # v1 --> Alias of the infected Visitor / v2 --> Alias of other Visitors
-raw_select     = "SELECT v2.company_id, v2.room_id, v2.zone_id, v2.phone_number, v2.visit_datetime, v2.visitor_id, v2.fname, v2.lname {}"
-summary_select = "SELECT count(distinct(v2.phone_number)) as nb_cases, count(distinct(v2.zone_id)) as nb_zones, max(v2.visit_datetime) - min(v2.visit_datetime) nb_days {}"
-contact_select = "SELECT v2.fname, v2.lname, v2.phone_number, v2.visitor_id, count(distinct(v2.zone_id)) as nb_zones, " \
+raw_select     = "SELECT v2.company_id, v2.room_id, v2.zone_id, v2.visit_datetime, v2.fname, v2.lname, v2.phone_number, v2.visitor_id {}"
+summary_select = "SELECT count(distinct(v2.phone_number)) as nb_cases, count(distinct(v2.zone_id)) as nb_zones, (max(v2.visit_datetime)::date - min(v2.visit_datetime)::date) as nb_days {}"
+contact_select = "SELECT v2.fname, v2.lname, v2.phone_number, v2.visitor_id, " \
                  "(SELECT count(1) {} and vv2.zone_id = vv1.zone_id and vv2.phone_number = v2.phone_number ) as nb_contacts, "\
-                 "min(v2.visit_datetime) as min_date, max(v2.visit_datetime) as max_date {}"
-              #  select v2.fname, v2.lname, v2.phone_number, v2.visitor_id, count(distinct(v2.zone_id)) as nb_zones,
-# nb_cases = "select count(1) FROM public.visit as vv1 inner join public.visit as vv2 on vv1.zone_id = vv2.zone_id
-# where
-# vv1.phone_number = '3262_' and vv2.phone_number <> '3262_' and
-# vv2.zone_id = vv1.zone_id and vv2.phone_number = v2.phone_number"
+                 "count(distinct(v2.zone_id)) as nb_zones, to_char(min(v2.visit_datetime),'YYYY-MM-DD HH24:MI:SS') as min_date, to_char(max(v2.visit_datetime),'YYYY-MM-DD HH24:MI:SS') as max_date {}"
+exists_select  = "SELECT exists (SELECT 1 FROM visit as v1 where {})"
 #
-main_qry = "FROM public.visit as {}1 inner join public.visit as {}2 on {}1.zone_id = {}2.zone_id where {}"
-group_by = " GROUP BY v2.phone_number, v2.visitor_id, v2.fname, v2.lname"
+main_qry = "FROM visit as {}1 inner join public.visit as {}2 on {}1.zone_id = {}2.zone_id where {}"
+group_by = " GROUP BY v2.phone_number, v2.visitor_id, v2.fname, v2.lname ORDER BY nb_contacts desc"
 #
 criteria_phone   = "({}1.phone_number = '{}' and {}2.phone_number <> '{}')"
-criteria_visitor = "({}1.visitor_id = '{}' and {}2.visitor_id <> '{}') "
+criteria_visitor = "({}1.visitor_id = '{}' and {}2.visitor_id <> '{}')"
 criteria_visit_dt = "({}2.visit_datetime between {}1.visit_datetime - interval '{} hour' and {}1.visit_datetime + interval '{} hour')"
 criteria_company  = "({}1.company_id = '{}' and {}2.company_id = '{}')"
-# TODO: TEST Scoped search to Company => Add 'company_id' as selection criteria
-
+#
+criteria_phone_exists   = "{}1.phone_number = '{}'"
+criteria_visitor_exists = "{}1.visitor_id = '{}'"
+criteria_company_exists = "{}1.company_id = '{}'"
 
 
 # ========
@@ -51,53 +49,71 @@ class Visit(Base, BaseTable, SerializerMixin):
     return f"{self.__tablename__}({self.id}, {self.company.description}, {self.room.description}, {self.zone.description}, {self.visit_datetime})"
 
   @classmethod
-  def compose_ccontact_sql(cls, criteria:dict) -> [str] :
-    sqls = []
-    # sqls.append(cls.compose_ccontact_sql_raw(criteria))
-    return cls.compose_ccontact_sql_raw(criteria)
+  def compose_ccontact_result(cls, result_keys:[], result_list:[dict]) -> {} :
+    data = {}
+    data[cls.RAW_DATA] = result_list[result_keys.index(cls.RAW_DATA)]
+    data[cls.SUMMARY]  = result_list[result_keys.index(cls.SUMMARY)]
+    data[cls.CONTACTS] = result_list[result_keys.index(cls.CONTACTS)]
+    data[cls.EXISTS]   = result_list.get(result_keys.index(cls.EXISTS))
+    #
+    result = {}
+    result['code'] = 0 if len(data[cls.RAW_DATA]['company_id']) > 0 else \
+                     1 if data[cls.EXISTS]['exists'] else 2
+    result['description'] =  'Données disponibles' if result['code'] == 0 else \
+                             'Aucun cas contact trouvé' if result['code'] == 0 else "L'identificateur saisi n'existe pas en base"
+    result['data'] = data
+    return result
 
+    sql_stmts_kv = vd.Visit.compose_ccontact_sqls(payload[type])
+    result_list = db.native_select_rows(sql_stmts_kv.values())
+
+  RAW_DATA = 'raw_data'
+  SUMMARY  = 'summay'
+  CONTACTS = 'contacts'
+  EXISTS   = 'exists'
   @classmethod
-  def compose_ccontact_sql_raw(cls, criteria:dict) -> str :
-    # phone = criteria.get('phone_number')
-    # vid =  criteria.get('visitor_id')
-    # hbv = 1 if criteria.get('h_before_visit') is None else criteria.get('h_before_visit')
-    # hav = 1 if criteria.get('h_after_visit') is None else criteria.get('h_after_visit')
-    # #
-    # def _compose_criteria_sql(cls, v_alias:str) -> str :
-    #   criteria_sql = criteria_visitor.format(v_alias, vid, v_alias, vid)   if phone == None else \
-    #                  criteria_phone.format(v_alias, phone, v_alias, phone) if vid == None else \
-    #                  '{} or {}'.format(criteria_visitor.format(v_alias, vid, v_alias, vid)  , criteria_phone.format(v_alias, phone, v_alias, phone))
-    #   criteria_sql = '{} and {}'.format(criteria_sql, criteria_visit_dt.format(v_alias, v_alias, hbv, v_alias, hav) )
-    #   if criteria.get('company_id') is not None :  # criteria_company  = "({}1.company_id = '{}' and {}2.company_id = '{}')"
-    #     criteria_sql = '{} and {}'.format(criteria_company.format(v_alias, v_alias, criteria.get('company_id')), criteria_sql)
-    #   return criteria_sql
+  def compose_ccontact_sqls(cls, criteria:dict) -> {} :
+    qry_from  = cls._compose_criteria_sql(criteria, 'v')
+    inner_qry_from = cls._compose_criteria_sql(criteria, 'vv')
     #
-    # qry_from = main_qry.format(criteria_sql)  # main_qry -> "FROM visit as v where v.id in (select v2.id FROM visit as v1 inner join visit as v2 on v1.zone_id = v2.zone_id where {})"
-    qry_from = cls._compose_criteria_sql(criteria=criteria, v_alias='v')   # main_qry -> "FROM visit as v where v.id in (select v2.id FROM visit as v1 inner join visit as v2 on v1.zone_id = v2.zone_id where {})"
-    inner_qry_from = cls._compose_criteria_sql(criteria=criteria, v_alias='vv')   # main_qry -> "FROM visit as v where v.id in (select v2.id FROM visit as v1 inner join visit as v2 on v1.zone_id = v2.zone_id where {})"
-    #
-    # GARDER
-    # return raw_select.format(qry_from)
-    # return summary_select.format(qry_from)
-    return contact_select.format(inner_qry_from, qry_from) + group_by
-# contact_select = "SELECT v2.fname, v2.lname, v2.phone_number, v2.visitor_id, count(distinct(v2.zone_id)) as nb_zones, " \
-#                  "(SELECT count(1) {} and vv2.zone_id = vv1.zone_id and vv2.phone_number = v2.phone_number ) as nb_contacts, " \
-#                  "min(v2.visit_datetime) as min_date, max(v2.visit_datetime) as max_date {}"
+    sqls = {}
+    sqls[cls.RAW_DATA] = raw_select.format(qry_from)
+    sqls[cls.SUMMARY]  = summary_select.format(qry_from)
+    sqls[cls.CONTACTS] = contact_select.format(inner_qry_from, qry_from) + group_by
+    sqls[cls.EXISTS]   = cls._compose_criteria_exists(criteria, 'v')
+    return sqls
 
   def _compose_criteria_sql(criteria:dict, v_alias:str) -> str :
     phone = criteria.get('phone_number')
     vid =  criteria.get('visitor_id')
     hbv = 1 if criteria.get('h_before_visit') is None else criteria.get('h_before_visit')
     hav = 1 if criteria.get('h_after_visit') is None else criteria.get('h_after_visit')
-    #
+    # 1 - Add phone_number + visitor_id Criteria
     criteria_sql = criteria_visitor.format(v_alias, vid, v_alias, vid)   \
                    if phone == None else criteria_phone.format(v_alias, phone, v_alias, phone) \
-                   if vid   == None else '{} or {}'.format(criteria_visitor.format(v_alias, vid, v_alias, vid)  , criteria_phone.format(v_alias, phone, v_alias, phone))
-    criteria_sql = '{} and {}'.format(criteria_sql, criteria_visit_dt.format(v_alias, v_alias, hbv, v_alias, hav) )
-    if criteria.get('company_id') is not None :  # criteria_company  = "({}1.company_id = '{}' and {}2.company_id = '{}')"
+                   if vid   == None else '({} or {})'.format(criteria_visitor.format(v_alias, vid, v_alias, vid)  , criteria_phone.format(v_alias, phone, v_alias, phone))
+    # 2 - Add company_id Criteria
+    if criteria.get('company_id') is not None :
       criteria_sql = '{} and {}'.format( criteria_company.format(v_alias, criteria.get('company_id'), v_alias, criteria.get('company_id')), criteria_sql)
+    # 3 - Add visit_datetime Criteria
+    criteria_sql = '{} and {}'.format(criteria_sql, criteria_visit_dt.format(v_alias, v_alias, hbv, v_alias, hav) )
+    #
     return main_qry.format(v_alias, v_alias, v_alias, v_alias, criteria_sql)
 
+  def _compose_criteria_exists(criteria:dict, v_alias:str) -> str :
+    phone = criteria.get('phone_number')
+    vid =  criteria.get('visitor_id')
+    hbv = 1 if criteria.get('h_before_visit') is None else criteria.get('h_before_visit')
+    hav = 1 if criteria.get('h_after_visit') is None else criteria.get('h_after_visit')
+    # 1 - Add phone_number + visitor_id Criteria
+    criteria_sql = criteria_visitor_exists.format(v_alias, vid) \
+                   if phone == None else criteria_phone_exists.format(v_alias, phone) \
+                   if vid   == None else '({} or {})'.format(criteria_visitor_exists.format(v_alias, vid)  , criteria_phone_exists.format(v_alias, phone))
+    # 2 - Add company_id Criteria
+    if criteria.get('company_id') is not None :
+      criteria_sql = '{} and {}'.format( criteria_company_exists.format(v_alias, criteria.get('company_id')), criteria_sql)
+    # 3 - Add exists visitor Check
+    return exists_select.format(criteria_sql)
 
   @classmethod
   def check_business_rules_for_upsert(cls, attr:dict):

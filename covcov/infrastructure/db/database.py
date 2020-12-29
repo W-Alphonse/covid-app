@@ -2,6 +2,7 @@ import crypt
 import json
 import logging
 import typing
+from collections import defaultdict
 from contextlib import contextmanager
 
 from sqlalchemy import literal, update
@@ -74,7 +75,7 @@ class Database :
         session.query(tables[i]).filter(tables[i].id == data['id']).delete()
 
 
-  def select_rows(self, datas:[Base], tables:[DeclarativeMeta], columns_to_filter:[str]=None) :
+  def select_rows(self, datas:[Base], tables:[DeclarativeMeta], columns_to_filter:[str]=None) -> [dict] :
     rows = []
     with self.session_scope() as session:
       for i, data in enumerate(datas) :
@@ -82,17 +83,42 @@ class Database :
           rows.append( self._remove_dict_keys( self._remove_dict_values(row.to_dict(), [None]) , columns_to_filter) )
     return rows
 
-  def native_select_rows(self, sql_query:str) :
-    rows = []
-    result = self.engine.execute(sql_query)
-    rows = result.fetchall()
-    return rows
+  """
+    sql_queries:[str]  - Array of SQL queries to be executed unconditionally, exception made to the last query in the array.
+    master_qry_ndx:int - If equal to -1, Then the last query will be executed unconditionally;
+                         Otherwise, the last query will be executed if the related 'master query' result was empty
+  """
+  def native_select_rows(self, sql_queries:[str], master_qry_ndx:int) -> [{}] :
+    result = []
+    master_qry_has_result = False
+    for i, sql_query in enumerate(sql_queries) :
+      # 1 - Check whether we should execute the last query
+      if (sql_query == sql_queries[-1]) and (master_qry_ndx != -1) and master_qry_has_result:
+        continue
+      # 2 - Execute the query ...
+      resultProxy = self.engine.execute(sql_query)  # <-- ResultProxy object is made up of RowProxy objects
+      rows = resultProxy.fetchall()
+      # 3 - Store the result in dictionnary
+      if resultProxy.rowcount != 0 :
+        master_qry_has_result = master_qry_has_result or (i == master_qry_ndx)
+        dd = defaultdict(list)
+        cols_list = resultProxy.keys()
+        for row in rows :                      # <-- type(row) == tuple
+          for i in range(0, len(cols_list)) :  # <-- extract one row and add it to defautdict
+            dd[cols_list[i]].append(row[i])
+        result.append(dict(dd))
+      else :
+        result.append(dict.fromkeys(resultProxy.keys() , {}))
+      #
+      # list_of_dicts = [{key: value for (key, value) in row.items()} for row in rows]
+      # row_as_dict = [dict(row) for row in resultProxy]
+    return result
+
 
   # def authenticate(self, user_data:dict, user_table:Base):
   #   with self.session_scope() as session:
   #     return  session.query(literal(True)).filter(session.query(user_table).filter(user_table.email == user_data['email'],
   #                                                 user_table.password == self._encrypt(user_data['password'])).exists()).scalar() == True
-
 
   def _remove_dict_values(self, dict_to_clean:{}, values_to_remove:[]) -> dict:
     cleaned_dict = {}

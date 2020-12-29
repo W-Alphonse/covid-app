@@ -39,6 +39,10 @@ def visit_api():
 def c_ccontact_api():
     return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'],'id'), db))
 
+@app.route("/a_ccontact", methods=["POST"])
+@cross_origin(headers=['Content-Type'])
+def a_ccontact_api():
+    return jsonify(route_dispatcher.dispatch(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'],'id'), db))
 
 @app.route("/example", methods=["POST"])
 def example():
