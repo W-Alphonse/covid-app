@@ -58,9 +58,6 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
       sql_stmts_kv = vd.Visit.compose_ccontact_sqls(payload[type])
       result_list = db.native_select_rows(list(sql_stmts_kv.values()), 0)
       method_result = vd.Visit.compose_ccontact_result(list(sql_stmts_kv.keys()), result_list)
-      # method_result = result_list
-    # elif method.upper() == 'A_CCONTACT' :
-    #   method_result = db.native_select_rows(vd.Visit.compose_ccontact_sqls(payload[type]))
     elif method.upper() == 'DELETE' :
       db.delete_rows([payload[type]],[table])
     # elif method.upper() == 'CONNECT' : # Authenticate over a database

@@ -6,7 +6,9 @@ from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.schema.base_domain import BaseTable
 
 # v1 --> Alias of the infected Visitor / v2 --> Alias of other Visitors
-raw_select     = "SELECT v2.company_id, v2.room_id, v2.zone_id, v2.visit_datetime, v2.fname, v2.lname, v2.phone_number, v2.visitor_id {}"
+raw_select     = "SELECT v2.company_id, (select r.description FROM room r where r.id=v2.room_id) as room, "\
+                 "(select z.description FROM zone z where z.id=v2.zone_id) as zone, " \
+                 "to_char(v2.visit_datetime,'YYYY-MM-DD HH24:MI:SS'), v2.fname, v2.lname, v2.phone_number, v2.visitor_id {}"
 summary_select = "SELECT count(distinct(v2.phone_number)) as nb_cases, count(distinct(v2.zone_id)) as nb_zones, (max(v2.visit_datetime)::date - min(v2.visit_datetime)::date) as nb_days {}"
 contact_select = "SELECT v2.fname, v2.lname, v2.phone_number, v2.visitor_id, " \
                  "(SELECT count(1) {} and vv2.zone_id = vv1.zone_id and vv2.phone_number = v2.phone_number ) as nb_contacts, "\
@@ -54,11 +56,11 @@ class Visit(Base, BaseTable, SerializerMixin):
     data[cls.RAW_DATA] = result_list[result_keys.index(cls.RAW_DATA)]
     data[cls.SUMMARY]  = result_list[result_keys.index(cls.SUMMARY)]
     data[cls.CONTACTS] = result_list[result_keys.index(cls.CONTACTS)]
-    data[cls.EXISTS]   = result_list.get(result_keys.index(cls.EXISTS))
+    exists             = result_list[result_keys.index(cls.EXISTS)]
     #
     result = {}
     result['code'] = 0 if len(data[cls.RAW_DATA]['company_id']) > 0 else \
-                     1 if data[cls.EXISTS]['exists'] else 2
+                     1 if exists['exists'] else 2
     result['description'] =  'Données disponibles' if result['code'] == 0 else \
                              'Aucun cas contact trouvé' if result['code'] == 0 else "L'identificateur saisi n'existe pas en base"
     result['data'] = data
