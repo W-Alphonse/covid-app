@@ -28,22 +28,18 @@ HEADERS_VALUES = {
 
 def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> str:
   try :
-    # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
-    method = payload.pop('method')
-    # 1.a - type values : [company, room, zone, visit]
-    type = next(iter(payload))
+    method = payload.pop('method')  # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
+    type = next(iter(payload))      # 1.a - type values : [company, room, zone, visit]
     table = vd.Visit   if type == vd.Visit.__tablename__ else \
             cd.Company if type == cd.Company.__tablename__ else \
             cd.Room    if type == cd.Room.__tablename__ else \
             cd.Zone    if type == cd.Zone.__tablename__ else None
-    # 1.b - Add 'qry_params' to 'payload data'
     if bool(qry_params):
-      payload[type].update(qry_params)
-    # 1.c - Compute "Company/Ars" ID by extracting 'sub' from the Authentication-token
-    if table == cd.Company :
-    # if (table == cd.Company) and ( payload[type].get('id') is None) :
+      payload[type].update(qry_params)  # 1.b - Add 'qry_params' to 'payload data'
+    if table == cd.Company :            # 1.c - Set the 'id' for "Company/Ars" by extracting 'sub' from the Authentication-token
+    # if (table == cd.Company) and ( payload[type].get('id') is None) : # <-- Over Flask, it allows to bypass Cognito by injecting the 'id' in the payload
       payload[type].update({'id': auth_claims['sub']})
-
+    #
     # 2 - According to method type, decide how to route the Payload
     method_result="Success :-)"
     if method.upper() == 'POST' or method.upper() == 'PUT' :
@@ -65,6 +61,9 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
     #     return _compose_error_unauthorized(payload[type]['email'])
     elif method.upper() == 'RESET_TABLES' :
       db.reset_tables()
+    elif method.upper() == 'FILL_TABLES' :
+      cd.create_company( payload[type]["company_id"] if bool(payload[type]["company_id"]) else "caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e")
+      vd.create_visist(  payload[type]["company_id"] if bool(payload[type]["company_id"]) else "caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e")
     else :
       raise Exception(f"Unrecognized 'method' value '{method}' or table '{str(type)}'. Value should be one of [POST, PUT, DELETE, GET, CONNECT]")
     return compose_success_response(method_result)
