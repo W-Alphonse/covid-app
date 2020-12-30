@@ -57,6 +57,12 @@ def example():
     response = {"answer": answer}
     return jsonify(response)
 
+@app.route("/echo", methods=["GET"])
+@cross_origin(headers=['Content-Type'])
+def echo():
+    return jsonify({"echo":"hello"})
+
+
 # @app.before_first_request
 # def before_start():
 #     db.create_tables()

@@ -46,7 +46,7 @@ class Room(Base, BaseTable, SerializerMixin):
   # __table_args__ = {'extend_existing': True}
 
   id = Column(String(10), primary_key=True)
-  description = Column(String(30))
+  description = Column(String(30), nullable=False)
   company_id  = Column(Unicode(BaseTable.SUB_SIZE), ForeignKey("company.id", ondelete='CASCADE'), nullable=False)
   #
   zones   = relationship("Zone", cascade="all, delete-orphan", backref="room")
@@ -69,7 +69,7 @@ class Zone(Base, BaseTable, SerializerMixin):
   # __table_args__ = {'extend_existing': True}
 
   id = Column(String(10), primary_key=True)
-  description = Column(String(30))
+  description = Column(String(30), nullable=False)
   room_id = Column(Unicode(10), ForeignKey("room.id", ondelete='CASCADE'), nullable=False)
   serialize_rules = ('-room',)
 

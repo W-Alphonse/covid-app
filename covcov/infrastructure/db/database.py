@@ -105,8 +105,8 @@ class Database :
         dd = defaultdict(list)
         cols_list = resultProxy.keys()
         for row in rows :                      # <-- type(row) == tuple
-          for i in range(0, len(cols_list)) :  # <-- extract one row and add it to defautdict
-            dd[cols_list[i]].append(row[i])
+          for i in range(0, len(cols_list)) :  # <-- extract one row and add it to defaultdict
+            dd[cols_list[i]].append(row[i] if row[i] is not None else '')
         result.append(dict(dd))
       else :
         result.append(dict.fromkeys(resultProxy.keys() , {}))

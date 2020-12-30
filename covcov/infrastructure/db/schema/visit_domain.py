@@ -8,7 +8,7 @@ from covcov.infrastructure.db.schema.base_domain import BaseTable
 # v1 --> Alias of the infected Visitor / v2 --> Alias of other Visitors
 raw_select     = "SELECT v2.company_id, (select r.description FROM room r where r.id=v2.room_id) as room, "\
                  "(select z.description FROM zone z where z.id=v2.zone_id) as zone, " \
-                 "to_char(v2.visit_datetime,'YYYY-MM-DD HH24:MI:SS'), v2.fname, v2.lname, v2.phone_number, v2.visitor_id {}"
+                 "to_char(v2.visit_datetime,'YYYY-MM-DD HH24:MI:SS') as visit_datetime, v2.fname, v2.lname, v2.phone_number, v2.visitor_id {}"
 summary_select = "SELECT count(distinct(v2.phone_number)) as nb_cases, count(distinct(v2.zone_id)) as nb_zones, (max(v2.visit_datetime)::date - min(v2.visit_datetime)::date) as nb_days {}"
 contact_select = "SELECT v2.fname, v2.lname, v2.phone_number, v2.visitor_id, " \
                  "(SELECT count(1) {} and vv2.zone_id = vv1.zone_id and vv2.phone_number = v2.phone_number ) as nb_contacts, "\
@@ -45,7 +45,7 @@ class Visit(Base, BaseTable, SerializerMixin):
   phone_number = Column(Unicode(20))
   fname = Column(Unicode(20))
   lname = Column(Unicode(20))
-  visit_datetime = Column(DateTime, default=datetime.datetime.now())
+  visit_datetime = Column(DateTime, default=datetime.datetime.now(), nullable=False)
 
   def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.company.description}, {self.room.description}, {self.zone.description}, {self.visit_datetime})"
@@ -62,7 +62,7 @@ class Visit(Base, BaseTable, SerializerMixin):
     result['code'] = 0 if len(data[cls.RAW_DATA]['company_id']) > 0 else \
                      1 if exists['exists'] else 2
     result['description'] =  'Données disponibles' if result['code'] == 0 else \
-                             'Aucun cas contact trouvé' if result['code'] == 0 else "L'identificateur saisi n'existe pas en base"
+                             'Aucun cas contact trouvé' if result['code'] == 0 else "L identificateur saisi n existe pas en base"
     result['data'] = data
     return result
 
