@@ -66,8 +66,8 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
     elif method.upper() == 'RESET_TABLES' :
       db.reset_tables()
     elif method.upper() == 'FILL_TABLES' :
-      cd.create_company( payload[type]["company_id"] if bool(payload[type]["company_id"]) else "caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e")
-      vd.create_visist(  payload[type]["company_id"] if bool(payload[type]["company_id"]) else "caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e")
+      cd.create_company( payload[type]["company_id"], payload[type]["company_name"], payload[type]["company_email"] )
+      vd.create_visist(  payload[type]["company_id"])
     else :
       raise Exception(f"Unrecognized 'method' value '{method}' or table '{str(type)}'. Value should be one of [POST, PUT, DELETE, GET, CONNECT]")
     return compose_success_response(method_result)
@@ -76,6 +76,17 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
     # raise Exception(str(_compose_error_response(ex) ))
 
 
+def _compose_error_response(ex: Exception) -> dict:
+  logger.exception(ex)
+  headers = HEADERS_VALUES.copy()
+  headers.update({"X-Amzn-ErrorType":"Exception"})
+  return {
+    STATUS_CODE: KO_500,
+    HEADERS : headers,
+    BODY: json.dumps({"errorMessage" : "Error of type [{}] occured : {}".format(type(ex), str(ex).replace('"', "'").replace('\n', '').strip("' ")) \
+                                       + "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )})
+  }
+
 # def _compose_error_response(ex: Exception) -> dict:
 #   logger.exception(ex)
 #   return {
@@ -83,18 +94,6 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
 #     ERROR_MESSAGE: "Error of type [{}] occured : {}".format( type(ex), str(ex).replace('"', "'").replace('\n','').strip("' ") ),
 #     STACK_TRACE: "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )
 #   }
-
-def _compose_error_response(ex: Exception) -> dict:
-  logger.exception(ex)
-  headers = HEADERS_VALUES.copy()
-  headers.update({"X-Amzn-ErrorType":"Exception"})
-
-  return {
-    STATUS_CODE: KO_500,
-    HEADERS : headers,
-    BODY: json.dumps({"errorMessage" : "Error of type [{}] occured : {}".format(type(ex), str(ex).replace('"', "'").replace('\n', '').strip("' ")) \
-                                       + "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )})
-  }
 
 
 # def _compose_error_unauthorized(user_id: str) -> dict:

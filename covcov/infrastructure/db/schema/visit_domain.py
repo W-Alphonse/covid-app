@@ -143,26 +143,26 @@ class Visit(Base, BaseTable, SerializerMixin):
 def create_visist(comp_id:str) :
   from covcov.infrastructure.db.database import Database
   db = Database("database")
-  # db.insert_value(['{"id":"visit_1", "company_id": comp_id, "room_id": "room_100.1", "zone_id": "z_100.1.1", "visitor_fname":"Jean", "visitor_lname": "De La Fontaine", "visitor_phone_number": "0661794641" }'], [Visit])
+        # db.insert_value(['{"id":"visit_1", "company_id": comp_id, "room_id": "room_100.1", "zone_id": "z_100.1.1", "visitor_fname":"Jean", "visitor_lname": "De La Fontaine", "visitor_phone_number": "0661794641" }'], [Visit])
 
   # Visit on ROOM_1 / z_0.1.1
-  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.1", "phone_number": "3262_" }}'], [Visit])
-  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.1", "phone_number": "3263" }}'], [Visit])
-  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.1", "phone_number": "3264" }}'], [Visit])
-
-  # Visit on ROOM_1 / z_0.1.3
-  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.3", "phone_number": "3262_" }}'], [Visit])
-  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.3", "phone_number": "3271" }}'], [Visit])
-
-  # Visit on ROOM_2 / z_0.2.1
-  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.1", "phone_number": "3262_" }}'], [Visit])
-  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.1", "phone_number": "3281" }}'], [Visit])
-  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.1", "phone_number": "3264" }}'], [Visit])
-
-  # Visit on ROOM_2 / z_0.2.2
-  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.2", "phone_number": "3291" }}'], [Visit])
-  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.2", "phone_number": "3292" }}'], [Visit])
-  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.2", "phone_number": "3263" }}'], [Visit])
+  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.1", "phone_number": "3262_" }}'], [Visit])
+  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.1", "phone_number": "3263" }}'], [Visit])
+  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.1", "phone_number": "3264" }}'], [Visit])
+  #
+  # # Visit on ROOM_1 / z_0.1.3
+  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.3", "phone_number": "3262_" }}'], [Visit])
+  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.3", "phone_number": "3271" }}'], [Visit])
+  #
+  # # Visit on ROOM_2 / z_0.2.1
+  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.1", "phone_number": "3262_" }}'], [Visit])
+  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.1", "phone_number": "3281" }}'], [Visit])
+  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.1", "phone_number": "3264" }}'], [Visit])
+  #
+  # # Visit on ROOM_2 / z_0.2.2
+  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.2", "phone_number": "3291" }}'], [Visit])
+  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.2", "phone_number": "3292" }}'], [Visit])
+  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.2", "phone_number": "3263" }}'], [Visit])
 
 
 if __name__ == '__main__':
