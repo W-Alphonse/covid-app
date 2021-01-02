@@ -1,3 +1,4 @@
+import json
 import logging
 import traceback
 
@@ -9,14 +10,17 @@ logger = logging.getLogger(__name__)
 #
 # Attributes and flags used in the endpoint api response
 STATUS_CODE = "statusCode"
-OK_200 = 200
-KO_401 = 401
-KO_500 = 500
+OK_200 = "200"
+KO_401 = "401"
+KO_500 = "500"
 #
 HEADERS = "headers"
 BODY    = "body"
-ERROR   = "error"
-ERROR_DETAIL = "error_detail"
+#
+STACK_TRACE = "stackTrace"
+ERROR_TYPE = "errorType"
+ERROR_MESSAGE = "errorMessage"
+
 #
 HEADERS_VALUES = {
   "Content-Type" : "application/json",
@@ -26,7 +30,7 @@ HEADERS_VALUES = {
 }
 
 
-def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> str:
+def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> dict:
   try :
     method = payload.pop('method')  # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
     type = next(iter(payload))      # 1.a - type values : [company, room, zone, visit]
@@ -69,23 +73,36 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
     return compose_success_response(method_result)
   except Exception as ex:
     return _compose_error_response(ex)
+    # raise Exception(str(_compose_error_response(ex) ))
 
+
+# def _compose_error_response(ex: Exception) -> dict:
+#   logger.exception(ex)
+#   return {
+#     STATUS_CODE: KO_500,
+#     ERROR_MESSAGE: "Error of type [{}] occured : {}".format( type(ex), str(ex).replace('"', "'").replace('\n','').strip("' ") ),
+#     STACK_TRACE: "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )
+#   }
 
 def _compose_error_response(ex: Exception) -> dict:
   logger.exception(ex)
+  headers = HEADERS_VALUES.copy()
+  headers.update({"X-Amzn-ErrorType":"Exception"})
+
   return {
     STATUS_CODE: KO_500,
-    HEADERS : HEADERS_VALUES,
-    ERROR: "Error of type [{}] occured : {}".format( type(ex), str(ex).replace('"', "'").replace('\n','').strip("' ") ),
-    ERROR_DETAIL: "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )
+    HEADERS : headers,
+    BODY: json.dumps({"errorMessage" : "Error of type [{}] occured : {}".format(type(ex), str(ex).replace('"', "'").replace('\n', '').strip("' ")) \
+                                       + "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )})
   }
+
 
 # def _compose_error_unauthorized(user_id: str) -> dict:
 #   logger.exception(f"Unauthorized user '{user_id}' error")
 #   return {
 #     STATUS_CODE: KO_401,
 #     HEADERS: HEADERS_VALUES,
-#     ERROR: "Unauthorized user error",
+#     BODY: "Unauthorized user error",
 #   }
 
 def compose_success_response(result) -> dict:
