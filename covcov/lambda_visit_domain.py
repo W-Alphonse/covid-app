@@ -13,5 +13,5 @@ def handle(event, context) :
     qry_params = event['queryStringParameters']
   else :
     body = event # --> Type(event) : <class 'dict'>
-  return route_dispatcher.dispatch(body, qry_params, None, db)
+  return route_dispatcher.dispatch(body, qry_params, None, event['resource'], db)
 

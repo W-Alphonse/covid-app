@@ -6,7 +6,7 @@ from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.schema.base_domain import BaseTable
 
 # v1 --> Alias of the infected Visitor / v2 --> Alias of other Visitors
-raw_select     = "SELECT v2.company_id, (select r.description FROM room r where r.id=v2.room_id) as room, "\
+raw_select     = "SELECT (select c.name FROM company c where c.id=v2.company_id) as company, (select r.description FROM room r where r.id=v2.room_id) as room, "\
                  "(select z.description FROM zone z where z.id=v2.zone_id) as zone, " \
                  "to_char(v2.visit_datetime,'YYYY-MM-DD HH24:MI:SS') as visit_datetime, v2.fname, v2.lname, v2.phone_number, v2.visitor_id {}"
 summary_select = "SELECT count(distinct(v2.phone_number)) as nb_cases, count(distinct(v2.zone_id)) as nb_zones, (max(v2.visit_datetime)::date - min(v2.visit_datetime)::date) as nb_days {}"
@@ -59,7 +59,7 @@ class Visit(Base, BaseTable, SerializerMixin):
     exists             = result_list[result_keys.index(cls.EXISTS)]
     #
     result = {}
-    result['code'] = 0 if len(data[cls.RAW_DATA]['company_id']) > 0 else \
+    result['code'] = 0 if len(data[cls.RAW_DATA]['company']) > 0 else \
                      1 if exists['exists'] else 2
     result['description'] =  'Données disponibles' if result['code'] == 0 else \
                              'Aucun cas contact trouvé' if result['code'] == 0 else "L identificateur saisi n existe pas en base"
@@ -86,14 +86,24 @@ class Visit(Base, BaseTable, SerializerMixin):
     return sqls
 
   def _compose_criteria_sql(criteria:dict, v_alias:str) -> str :
+    # b = s.strip() if s and s.strip() else 'None'
     phone = criteria.get('phone_number')
+    phone = phone.strip() if phone and phone.strip() else None
+    #
     vid =  criteria.get('visitor_id')
+    vid =  vid.strip() if vid and vid.strip() else None
+    #
+    # hbv = criteria.get('h_before_visit')
+    # hbv = hbv.strip() if hbv and hbv.strip() else 1
+    #
+    # hav = criteria.get('h_after_visit')
+    # hav = hbv.strip() if hav and hav.strip() else 1
     hbv = 1 if criteria.get('h_before_visit') is None else criteria.get('h_before_visit')
     hav = 1 if criteria.get('h_after_visit') is None else criteria.get('h_after_visit')
     # 1 - Add phone_number + visitor_id Criteria
-    criteria_sql = criteria_visitor.format(v_alias, vid, v_alias, vid)   \
-                   if phone == None else criteria_phone.format(v_alias, phone, v_alias, phone) \
-                   if vid   == None else '({} or {})'.format(criteria_visitor.format(v_alias, vid, v_alias, vid)  , criteria_phone.format(v_alias, phone, v_alias, phone))
+    criteria_sql = criteria_visitor.format(v_alias, vid, v_alias, vid)   if phone == None else \
+                   criteria_phone.format(v_alias, phone, v_alias, phone) if vid   == None else \
+                   '({} or {})'.format(criteria_visitor.format(v_alias, vid, v_alias, vid)  , criteria_phone.format(v_alias, phone, v_alias, phone))
     # 2 - Add company_id Criteria
     if criteria.get('company_id') is not None :
       criteria_sql = '{} and {}'.format( criteria_company.format(v_alias, criteria.get('company_id'), v_alias, criteria.get('company_id')), criteria_sql)
@@ -122,7 +132,7 @@ class Visit(Base, BaseTable, SerializerMixin):
     if (attr.get('company_id') is None) or (attr.get('room_id') is None) or (attr.get('zone_id') is None)  :
       raise ValueError(f"'Visit' entity instance should reference a well identified location => Indicate 'company_id, room_id and zone_id' ")
     #
-    if ( (attr.get('visitor_phone_number') is None)  and (attr.get('visitor_id') is None)  ):
+    if ( (attr.get('phone_number') is None)  and (attr.get('visitor_id') is None)  ):
       raise ValueError(f"'Visit' entity instance should reference a well identified client => Either indicate 'phone_number' or 'visitor_id' ")
 
 
@@ -140,7 +150,7 @@ class Visit(Base, BaseTable, SerializerMixin):
       raise ValueError(f"Please indicate 'visiting date' before search")
 
 
-def create_visist(comp_id:str) :
+def create_visit(comp_id:str) :
   from covcov.infrastructure.db.database import Database
   db = Database("database")
         # db.insert_value(['{"id":"visit_1", "company_id": comp_id, "room_id": "room_100.1", "zone_id": "z_100.1.1", "visitor_fname":"Jean", "visitor_lname": "De La Fontaine", "visitor_phone_number": "0661794641" }'], [Visit])

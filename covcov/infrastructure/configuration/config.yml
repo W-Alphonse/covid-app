@@ -12,12 +12,13 @@ database_contact:
     echo: True
 
 cognito:
-    COG_APP_CLIENT_ID   : 609gnq3mcc80ag2fbatfsfhsgi
+    COG_APP_CLIENT_ID   : 6o8cf2djai5dg5btns5iqaf13r
     COG_REGION          : eu-west-3
-    COG_USER_POOL_ID    : eu-west-3_Db1d3cPZJ
+    COG_USER_POOL_ID    : eu-west-3_05HzIk4Qk
 
-#covcovUsers   : arn:aws:cognito-idp:eu-west-3:477780155390:userpool/eu-west-3_bAiEm44uF
-#covcovCompany : arn:aws:cognito-idp:eu-west-3:477780155390:userpool/eu-west-3_Db1d3cPZJ
+# YHO - covcovUsers   : arn:aws:cognito-idp:eu-west-3:477780155390:userpool/eu-west-3_bAiEm44uF
+# YHO - covcovCompany : arn:aws:cognito-idp:eu-west-3:477780155390:userpool/eu-west-3_Db1d3cPZJ
+# HAA - covcov-company: arn:aws:cognito-idp:eu-west-3:835479088552:userpool/eu-west-3_05HzIk4Qk
 
 logging:
     format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

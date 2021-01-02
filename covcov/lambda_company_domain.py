@@ -52,7 +52,7 @@ def handle(event, context) :
   #     print(f'HEADER -> key:{k} - type(value):{type(v)} - value:{v} ')
   # print(f'** event[headers] ** ->  type(value):{type(event["headers"])} - value:{str(event["headers"])} ')
 
-  ret = route_dispatcher.dispatch(body, qry_params, cognito_idp.get_claims(event['headers']['auth-id-token'],'id'), db)
+  ret = route_dispatcher.dispatch(body, qry_params, cognito_idp.get_claims(event['headers']['auth-id-token'],'id'), event['resource'], db)
   # ret = route_dispatcher.dispatch(body, qry_params, event['headers']['auth-id-token'], db, cognito_idp)
   # print(f'** route_dispatcher.dispatch ({type(ret)}) ** : {str(ret)}')
   return ret

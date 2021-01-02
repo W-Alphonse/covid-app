@@ -30,14 +30,36 @@ HEADERS_VALUES = {
 }
 
 
-def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> dict:
+def check_route_consistency(method : str, tablename:str, route:str) :
+  msg_err = f"Action interdite '{method} / {tablename}' pour '{route}'."
+  if route == "/visit_domain" :
+    if method == "GET" or method == "DELETE" or tablename != vd.Visit.__tablename__ :
+      raise Exception(msg_err)
+    else :
+      return
+  #
+  if route == "/company_domain" :
+    if tablename == vd.Visit.__tablename__ :
+      raise Exception(msg_err)
+    else :
+      return
+  #
+  if route == "/c_ccontact" or route == "/a_ccontact":
+    if method != "" :
+      raise Exception(msg_err)
+    else :
+      return
+
+
+def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Database) -> dict:
   try :
-    method = payload.pop('method')  # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
-    type = next(iter(payload))      # 1.a - type values : [company, room, zone, visit]
+    method = payload.pop('method') if bool(payload.get('method'))  else '' # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
+    type = next(iter(payload))          # 1.a - type values : [company, room, zone, visit]
     table = vd.Visit   if type == vd.Visit.__tablename__ else \
             cd.Company if type == cd.Company.__tablename__ else \
             cd.Room    if type == cd.Room.__tablename__ else \
             cd.Zone    if type == cd.Zone.__tablename__ else None
+    check_route_consistency(method, type, route)
     if bool(qry_params):
       payload[type].update(qry_params)  # 1.b - Add 'qry_params' to 'payload data'
     if table == cd.Company :            # 1.c - Set the 'id' for "Company/Ars" by extracting 'sub' from the Authentication-token
@@ -52,8 +74,8 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
       db.insert_value([payload[type]],[table]) if table == vd.Visit else db.upsert_value([payload[type]],[table])
     elif method.upper() == 'GET' :
       method_result =  db.select_rows( [table(**payload[type])] , [table])
-    elif (method.upper() == 'C_CCONTACT') or (method.upper() == 'A_CCONTACT') :
-      if method.upper() == 'C_CCONTACT' :
+    elif (route == '/a_ccontact') or (route == '/c_ccontact') :
+      if route == '/c_ccontact' :
         payload[type].update({'company_id': auth_claims['sub']})
       sql_stmts_kv = vd.Visit.compose_ccontact_sqls(payload[type])
       result_list = db.native_select_rows(list(sql_stmts_kv.values()), 0)
@@ -67,7 +89,7 @@ def dispatch(payload : dict, qry_params:dict, auth_claims:dict, db:Database) -> 
       db.reset_tables()
     elif method.upper() == 'FILL_TABLES' :
       cd.create_company( payload[type]["company_id"], payload[type]["company_name"], payload[type]["company_email"] )
-      vd.create_visist(  payload[type]["company_id"])
+      vd.create_visit(payload[type]["company_id"])
     else :
       raise Exception(f"Unrecognized 'method' value '{method}' or table '{str(type)}'. Value should be one of [POST, PUT, DELETE, GET, CONNECT]")
     return compose_success_response(method_result)
@@ -83,8 +105,9 @@ def _compose_error_response(ex: Exception) -> dict:
   return {
     STATUS_CODE: KO_500,
     HEADERS : headers,
-    BODY: json.dumps({"errorMessage" : "Error of type [{}] occured : {}".format(type(ex), str(ex).replace('"', "'").replace('\n', '').strip("' ")) \
-                                       + "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )})
+    # BODY: json.dumps({"errorMessage" : "Error of type [{}] occured : {}".format(type(ex), str(ex).replace('"', "'").replace('\n', '').strip("' ")) \
+    BODY: json.dumps({"errorMessage" : "Error of type [{}] occured : {}.".format(type(ex), str(ex).replace('"', "'").replace('\n', '')) \
+                                                         + "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )})
   }
 
 # def _compose_error_response(ex: Exception) -> dict:
@@ -108,5 +131,6 @@ def compose_success_response(result) -> dict:
   return {
     STATUS_CODE: OK_200,
     HEADERS: HEADERS_VALUES,
-    BODY: str(result).replace("'",'"')
+    # BODY: str(result).replace("'",'"')
+    BODY: json.dumps(result)
   }
