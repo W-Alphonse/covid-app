@@ -12,11 +12,13 @@ rm covcov-app.zip; zip -g -r ./build_zipped/covcov-app.zip ./covcov
 # 3 - Add lambda(s) at the root of the zip
 cd covcov; zip -g ../build_zipped/covcov-app.zip ./lambda_company_domain.py
 zip -g ../build_zipped/covcov-app.zip ./lambda_visit_domain.py
-zip -g ../build_zipped/covcov-app.zip ./lambda_cas_contact.py; cd ..
+zip -g ../build_zipped/covcov-app.zip ./lambda_cas_contact.py
+zip -g ../build_zipped/covcov-app.zip ./lambda_postsignup_confirmation.py; cd ..
 
 # 4 - Delete the unrequired artifacts
 zip -d ./build_zipped/covcov-app.zip covcov/lambda_company_domain.py
 zip -d ./build_zipped/covcov-app.zip covcov/lambda_visit_domain.py
 zip -d ./build_zipped/covcov-app.zip covcov/lambda_cas_contact.py
+zip -d ./build_zipped/covcov-app.zip covcov/lambda_postsignup_confirmation.py
 zip -d ./build_zipped/covcov-app.zip covcov/application/server.py
 zip -d ./build_zipped/covcov-app.zip covcov/requirements-flask.txt
