@@ -88,7 +88,7 @@ class Database :
     master_qry_ndx:int - If equal to -1, Then the last query will be executed unconditionally;
                          Otherwise, the last query will be executed if the related 'master query' result was empty
   """
-  def native_select_rows(self, sql_queries:[str], master_qry_ndx:int, lqry_default_rest={"exists":True}) -> [{}] :
+  def native_select_rows(self, sql_queries:[str], master_qry_ndx=-1, lqry_default_rest={"exists":True}) -> [{}] :
     result = []
     master_qry_has_result = False
     for i, sql_query in enumerate(sql_queries) :

@@ -5,6 +5,7 @@ from sqlalchemy_serializer import SerializerMixin
 from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.schema.base_domain import BaseTable
 
+"""--SQL Pour CAS CONTACT--"""
 # v1 --> Alias of the infected Visitor / v2 --> Alias of other Visitors
 raw_select     = "SELECT (select c.name FROM company c where c.id=v2.company_id) as company, (select r.description FROM room r where r.id=v2.room_id) as room, "\
                  "(select z.description FROM zone z where z.id=v2.zone_id) as zone, " \
@@ -27,6 +28,7 @@ criteria_phone_exists   = "{}1.phone_number = '{}'"
 criteria_visitor_exists = "{}1.visitor_id = '{}'"
 criteria_company_exists = "{}1.company_id = '{}'"
 
+company_url_select = "select c.url from company c where c.id='{}' "
 
 # ========
 #  Visit
@@ -51,6 +53,11 @@ class Visit(Base, BaseTable, SerializerMixin):
     return f"{self.__tablename__}({self.id}, {self.company.description}, {self.room.description}, {self.zone.description}, {self.visit_datetime})"
 
   @classmethod
+  def select_company_url(cls, comp_id:str) -> str :
+    return company_url_select.format(comp_id)
+
+
+  @classmethod
   def compose_ccontact_result(cls, result_keys:[], result_list:[dict]) -> {} :
     data = {}
     data[cls.RAW_DATA] = result_list[result_keys.index(cls.RAW_DATA)]
@@ -70,7 +77,7 @@ class Visit(Base, BaseTable, SerializerMixin):
     result_list = db.native_select_rows(sql_stmts_kv.values())
 
   RAW_DATA = 'raw_data'
-  SUMMARY  = 'summay'
+  SUMMARY  = 'summary'
   CONTACTS = 'contacts'
   EXISTS   = 'exists'
   @classmethod
@@ -150,33 +157,34 @@ class Visit(Base, BaseTable, SerializerMixin):
       raise ValueError(f"Please indicate 'visiting date' before search")
 
 
-def create_visit(comp_id:str) :
+def create_visit(comp_id:str, pfix='X') :
   from covcov.infrastructure.db.database import Database
   db = Database("database")
         # db.insert_value(['{"id":"visit_1", "company_id": comp_id, "room_id": "room_100.1", "zone_id": "z_100.1.1", "visitor_fname":"Jean", "visitor_lname": "De La Fontaine", "visitor_phone_number": "0661794641" }'], [Visit])
 
   # Visit on ROOM_1 / z_0.1.1
-  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.1", "phone_number": "3262_" }}'], [Visit])
-  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.1", "phone_number": "3263" }}'], [Visit])
-  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.1", "phone_number": "3264" }}'], [Visit])
-  #
-  # # Visit on ROOM_1 / z_0.1.3
-  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.3", "phone_number": "3262_" }}'], [Visit])
-  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.1", "zone_id": "z_0.1.3", "phone_number": "3271" }}'], [Visit])
-  #
-  # # Visit on ROOM_2 / z_0.2.1
-  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.1", "phone_number": "3262_" }}'], [Visit])
-  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.1", "phone_number": "3281" }}'], [Visit])
-  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.1", "phone_number": "3264" }}'], [Visit])
-  #
-  # # Visit on ROOM_2 / z_0.2.2
-  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.2", "phone_number": "3291" }}'], [Visit])
-  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.2", "phone_number": "3292" }}'], [Visit])
-  # db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "room_0.2", "zone_id": "z_0.2.2", "phone_number": "3263" }}'], [Visit])
+  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.1", "zone_id": "{pfix}z_0.1.1", "phone_number": "3262_" }}'], [Visit])
+  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.1", "zone_id": "{pfix}z_0.1.1", "phone_number": "3263" }}'], [Visit])
+  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.1", "zone_id": "{pfix}z_0.1.1", "phone_number": "3264" }}'], [Visit])
+
+  # Visit on ROOM_1 / z_0.1.3
+  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.1", "zone_id": "{pfix}z_0.1.3", "phone_number": "3262_" }}'], [Visit])
+  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.1", "zone_id": "{pfix}z_0.1.3", "phone_number": "3271" }}'], [Visit])
+
+  # Visit on ROOM_2 / z_0.2.1
+  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.2", "zone_id": "{pfix}z_0.2.1", "phone_number": "3262_" }}'], [Visit])
+  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.2", "zone_id": "{pfix}z_0.2.1", "phone_number": "3281" }}'], [Visit])
+  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.2", "zone_id": "{pfix}z_0.2.1", "phone_number": "3264" }}'], [Visit])
+
+  # Visit on ROOM_2 / z_0.2.2
+  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.2", "zone_id": "{pfix}z_0.2.2", "phone_number": "3291" }}'], [Visit])
+  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.2", "zone_id": "{pfix}z_0.2.2", "phone_number": "3292" }}'], [Visit])
+  db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.2", "zone_id": "{pfix}z_0.2.2", "phone_number": "3263" }}'], [Visit])
 
 
 if __name__ == '__main__':
   pass
+  # create_visit("57976c93-cd46-44c4-82c1-6271abc0c319", "Y")
   #
   # sess = db.session()
   # sess.add(Visit({"id":"visit_3", "company_id": "comp_1", "room_id": "room_1.1", "zone_id": "z_100.1.1", "visitor_fname":"Jean", "visitor_lname": "De Lafontaine" }))

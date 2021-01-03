@@ -43,7 +43,7 @@ class Company(Base, BaseTable, SerializerMixin):
 #======
 class Room(Base, BaseTable, SerializerMixin):
   __tablename__ = 'room'
-  # __table_args__ = {'extend_existing': True}
+  __table_args__ = {'extend_existing': True}
 
   id = Column(String(10), primary_key=True)
   description = Column(String(30), nullable=False)
@@ -66,7 +66,7 @@ class Room(Base, BaseTable, SerializerMixin):
 #======
 class Zone(Base, BaseTable, SerializerMixin):
   __tablename__ = 'zone'
-  # __table_args__ = {'extend_existing': True}
+  __table_args__ = {'extend_existing': True}
 
   id = Column(String(10), primary_key=True)
   description = Column(String(30), nullable=False)
@@ -77,44 +77,45 @@ class Zone(Base, BaseTable, SerializerMixin):
     return f"{self.__tablename__}({self.id}, {self.description}, FK.room_id={self.room_id})"
 
 
-#-- "company sub": "caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e" | "...f" | "...g" --#
-def create_company(comp_id:str, comp_name:str, comp_email:str):
+#-- "company sub": "caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e" | "...f" | "...g" --#  {pfix}
+def create_company(comp_id:str, comp_name:str, comp_email:str, pfix='X'):
   from covcov.infrastructure.db.database import Database
   db = Database("database")
   # Creation Company_1
   db.insert_value([f'{{"id":"{comp_id}", "name": "{comp_name}", "address": "1 - 24 Avenue Frayce", "zip_code":"93401", "phone_number":"0661794641", "email":"{comp_email}" }}'], [Company])
-  # db.insert_value([f'{{"id":"room_0.1", "description":"ROOM_0.1_", "company_id":"{comp_id}" }}'], [Room])
-  # db.insert_value([f'{{"id":"z_0.1.1", "description":"Z_0.1.1", "room_id":"room_0.1"}}'], [Zone])
-  # db.insert_value([f'{{"id":"z_0.1.2", "description":"Z_0.1.2", "room_id":"room_0.1"}}'], [Zone])
-  # db.insert_value([f'{{"id":"z_0.1.3", "description":"Z_0.1.3", "room_id":"room_0.1"}}'], [Zone])
-  # #
-  # db.insert_value([f'{{"id":"room_0.2", "description":"ROOM_0.2_", "company_id":"{comp_id}" }}'], [Room])
-  # db.insert_value([f'{{"id":"z_0.2.1", "description":"Z_0.2.1", "room_id":"room_0.2"}}'], [Zone])
-  # db.insert_value([f'{{"id":"z_0.2.2", "description":"Z_0.2.2", "room_id":"room_0.2"}}'], [Zone])
-  # #
-  # db.insert_value([f'{{"id":"room_0.3", "description":"ROOM_0.3_", "company_id":"{comp_id}" }}'], [Room])
-  # db.insert_value([f'{{"id":"z_0.3.1", "description":"Z_0.3.1", "room_id":"room_0.3"}}'], [Zone])
+  db.insert_value([f'{{"id":"{pfix}room_0.1", "description":"ROOM_0.1_", "company_id":"{comp_id}" }}'], [Room])
+  db.insert_value([f'{{"id":"{pfix}z_0.1.1", "description":"Z_0.1.1", "room_id":"{pfix}room_0.1"}}'], [Zone])
+  db.insert_value([f'{{"id":"{pfix}z_0.1.2", "description":"Z_0.1.2", "room_id":"{pfix}room_0.1"}}'], [Zone])
+  db.insert_value([f'{{"id":"{pfix}z_0.1.3", "description":"Z_0.1.3", "room_id":"{pfix}room_0.1"}}'], [Zone])
   #
-  # # Creation Company_2
-  # db.insert_value([f'{{"id":"{comp_id[:-1]}+", "name": "2_{comp_name}", "address": "2 - 24 Avenue Frayce", "zip_code":"93402", "phone_number":"0661794642", "email":"2_{comp_email}" }}'], [Company])
-  # db.insert_value([f'{{"id":"room_2.1", "description":"ROOM_2.1_", "company_id":"{comp_id[:-1]}+" }}'], [Room])
-  # db.insert_value([f'{{"id":"z_2.1.1", "description":"Z_2.1.1", "room_id":"room_2.1"}}'], [Zone])
-  # db.insert_value([f'{{"id":"z_2.1.2", "description":"Z_2.1.2", "room_id":"room_2.1"}}'], [Zone])
-  # db.insert_value([f'{{"id":"z_2.1.3", "description":"Z_2.1.3", "room_id":"room_2.1"}}'], [Zone])
-  # #
-  # db.insert_value([f'{{"id":"room_2.2", "description":"ROOM_2.2_", "company_id":"{comp_id[:-1]}+" }}'], [Room])
-  # db.insert_value([f'{{"id":"z_2.2.1", "description":"Z_2.2.1", "room_id":"room_2.2"}}'], [Zone])
-  # db.insert_value([f'{{"id":"z_2.2.2", "description":"Z_2.2.2", "room_id":"room_2.2"}}'], [Zone])
+  db.insert_value([f'{{"id":"{pfix}room_0.2", "description":"ROOM_0.2_", "company_id":"{comp_id}" }}'], [Room])
+  db.insert_value([f'{{"id":"{pfix}z_0.2.1", "description":"Z_0.2.1", "room_id":"{pfix}room_0.2"}}'], [Zone])
+  db.insert_value([f'{{"id":"{pfix}z_0.2.2", "description":"Z_0.2.2", "room_id":"{pfix}room_0.2"}}'], [Zone])
   #
-  # # Creation Company_3
-  # db.insert_value([f'{{"id":"{comp_id[:-1]}-", "name": "3_{comp_name}", "address": "3 - 24 Avenue Frayce", "zip_code":"93403", "phone_number":"0661794643", "email":"3_{comp_email}"}}'], [Company])
-  # db.insert_value([f'{{"id":"room_3.1", "description":"ROOM_3.1_", "company_id":"{comp_id[:-1]}-" }}'], [Room])
-  # db.insert_value([f'{{"id":"z_3.1.1", "description":"Z_3.1.1", "room_id":"room_3.1"}}'], [Zone])
-  # db.insert_value([f'{{"id":"z_3.1.2", "description":"Z_3.1.2", "room_id":"room_3.1"}}'], [Zone])
+  db.insert_value([f'{{"id":"{pfix}room_0.3", "description":"ROOM_0.3_", "company_id":"{comp_id}" }}'], [Room])
+  db.insert_value([f'{{"id":"{pfix}z_0.3.1", "description":"Z_0.3.1", "room_id":"{pfix}room_0.3"}}'], [Zone])
+
+  # Creation Company_2
+  db.insert_value([f'{{"id":"{comp_id[:-1]}+", "name": "2_{comp_name}", "address": "2 - 24 Avenue Frayce", "zip_code":"93402", "phone_number":"0661794642", "email":"2_{comp_email}" }}'], [Company])
+  db.insert_value([f'{{"id":"{pfix}room_2.1", "description":"ROOM_2.1_", "company_id":"{comp_id[:-1]}+" }}'], [Room])
+  db.insert_value([f'{{"id":"{pfix}z_2.1.1", "description":"Z_2.1.1", "room_id":"{pfix}room_2.1"}}'], [Zone])
+  db.insert_value([f'{{"id":"{pfix}z_2.1.2", "description":"Z_2.1.2", "room_id":"{pfix}room_2.1"}}'], [Zone])
+  db.insert_value([f'{{"id":"{pfix}z_2.1.3", "description":"Z_2.1.3", "room_id":"{pfix}room_2.1"}}'], [Zone])
+  #
+  db.insert_value([f'{{"id":"{pfix}room_2.2", "description":"ROOM_2.2_", "company_id":"{comp_id[:-1]}+" }}'], [Room])
+  db.insert_value([f'{{"id":"{pfix}z_2.2.1", "description":"Z_2.2.1", "room_id":"{pfix}room_2.2"}}'], [Zone])
+  db.insert_value([f'{{"id":"{pfix}z_2.2.2", "description":"Z_2.2.2", "room_id":"{pfix}room_2.2"}}'], [Zone])
+
+  # Creation Company_3
+  db.insert_value([f'{{"id":"{comp_id[:-2]}-", "name": "3_{comp_name}", "address": "3 - 24 Avenue Frayce", "zip_code":"93403", "phone_number":"0661794643", "email":"3_{comp_email}"}}'], [Company])
+  db.insert_value([f'{{"id":"{pfix}room_3.1", "description":"ROOM_3.1_", "company_id":"{comp_id[:-2]}-" }}'], [Room])
+  db.insert_value([f'{{"id":"{pfix}z_3.1.1", "description":"Z_3.1.1", "room_id":"{pfix}room_3.1"}}'], [Zone])
+  db.insert_value([f'{{"id":"{pfix}z_3.1.2", "description":"Z_3.1.2", "room_id":"{pfix}room_3.1"}}'], [Zone])
 
 
 if __name__ == '__main__':
   pass
+  # create_company("57976c93-cd46-44c4-82c1-6271abc0c319", "covcov", "yohan.obadia@gmail.com", "Y")
   #
   # db.insert_value([f'{{"id":"comp_2", "address": "24 Avenue Frayce", "zip_code":"93400"}}'], [Company])
   # session = sessionmaker(bind=engine)

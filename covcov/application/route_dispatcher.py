@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 # Attributes and flags used in the endpoint api response
 STATUS_CODE = "statusCode"
 OK_200 = "200"
+OK_302 = "302"
+#
 KO_401 = "401"
 KO_500 = "500"
 #
@@ -71,7 +73,14 @@ def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Data
     if method.upper() == 'POST' or method.upper() == 'PUT' :
       table.enhance_payload_with_auth_token(payload[type], auth_claims)
       table.check_business_rules_for_upsert(payload[type])
-      db.insert_value([payload[type]],[table]) if table == vd.Visit else db.upsert_value([payload[type]],[table])
+      # db.insert_value([payload[type]],[table]) if table == vd.Visit else db.upsert_value([payload[type]],[table])
+      if table == vd.Visit :
+        db.insert_value([payload[type]],[table])
+        str_url = select_company_url(payload[type]['company_id'], db)
+        if str_url and str_url.strip() :
+          return compose_redirect_response(str_url)
+      else :
+        db.upsert_value([payload[type]],[table])
     elif method.upper() == 'GET' :
       method_result =  db.select_rows( [table(**payload[type])] , [table])
     elif (route == '/a_ccontact') or (route == '/c_ccontact') :
@@ -82,9 +91,6 @@ def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Data
       method_result = vd.Visit.compose_ccontact_result(list(sql_stmts_kv.keys()), result_list)
     elif method.upper() == 'DELETE' :
       db.delete_rows([payload[type]],[table])
-    # elif method.upper() == 'CONNECT' : # Authenticate over a database
-    #   if not db.authenticate(payload[type],table) :
-    #     return _compose_error_unauthorized(payload[type]['email'])
     elif method.upper() == 'RESET_TABLES' :
       db.reset_tables()
     elif method.upper() == 'FILL_TABLES' :
@@ -97,6 +103,10 @@ def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Data
     return _compose_error_response(ex)
     # raise Exception(str(_compose_error_response(ex) ))
 
+def select_company_url(comp_id:str, db:Database) -> str :
+  result_as_dict = db.native_select_rows( [vd.Visit.select_company_url(comp_id)] ) [0]
+  return result_as_dict['url'][0]
+
 
 def _compose_error_response(ex: Exception) -> dict:
   logger.exception(ex)
@@ -107,7 +117,7 @@ def _compose_error_response(ex: Exception) -> dict:
     HEADERS : headers,
     # BODY: json.dumps({"errorMessage" : "Error of type [{}] occured : {}".format(type(ex), str(ex).replace('"', "'").replace('\n', '').strip("' ")) \
     BODY: json.dumps({"errorMessage" : "Error of type [{}] occured : {}.".format(type(ex), str(ex).replace('"', "'").replace('\n', '')) \
-                                                         + "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )})
+                                       + "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )})
   }
 
 # def _compose_error_response(ex: Exception) -> dict:
@@ -117,7 +127,6 @@ def _compose_error_response(ex: Exception) -> dict:
 #     ERROR_MESSAGE: "Error of type [{}] occured : {}".format( type(ex), str(ex).replace('"', "'").replace('\n','').strip("' ") ),
 #     STACK_TRACE: "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )
 #   }
-
 
 # def _compose_error_unauthorized(user_id: str) -> dict:
 #   logger.exception(f"Unauthorized user '{user_id}' error")
@@ -133,4 +142,14 @@ def compose_success_response(result) -> dict:
     HEADERS: HEADERS_VALUES,
     # BODY: str(result).replace("'",'"')
     BODY: json.dumps(result)
+  }
+
+def compose_redirect_response(location:str) -> dict:
+  headers = HEADERS_VALUES.copy()
+  d_location = {"Location":f"{location}"}
+  headers.update(d_location)
+  return {
+    STATUS_CODE: OK_302,
+    HEADERS: headers,
+    BODY: json.dumps(d_location)
   }
