@@ -44,4 +44,4 @@ def handle(event, context):
     qry_params = event['queryStringParameters']
   else :
     body = event # --> Type(event) : <class 'dict'>
-  return route_dispatcher.dispatch(body, qry_params, None, event['resource'], db)
+  return route_dispatcher.dispatch(body, qry_params, cognito_idp.get_claims(event['headers']['auth-id-token'],'id'), event['resource'], db)
