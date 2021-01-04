@@ -12,3 +12,7 @@ class BaseTable :
   @classmethod
   def enhance_payload_with_auth_token(cls, payload_attr:dict, auth_claims:dict):
     pass
+
+  @classmethod
+  def preprocess_before_upsert_upsert(cls, payload_attr:dict):
+    pass
