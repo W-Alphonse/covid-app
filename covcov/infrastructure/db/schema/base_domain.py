@@ -14,5 +14,5 @@ class BaseTable :
     pass
 
   @classmethod
-  def preprocess_before_upsert_upsert(cls, payload_attr:dict):
+  def preprocess_before_upsert(cls, payload_attr:dict):
     pass

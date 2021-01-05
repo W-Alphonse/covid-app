@@ -41,7 +41,7 @@ def check_route_consistency(method : str, tablename:str, route:str) :
       return
   #
   if route == "/company_domain" :
-    if tablename == vd.Visit.__tablename__ :
+    if tablename == vd.Visit.__tablename__ or method == "DELETE" :
       raise Exception(msg_err)
     else :
       return
@@ -73,16 +73,10 @@ def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Data
     if method.upper() == 'POST' or method.upper() == 'PUT' :
       table.enhance_payload_with_auth_token(payload[type], auth_claims)
       table.check_business_rules_for_upsert(payload[type])
-      table.preprocess_before_upsert_upsert(payload[type])
-      # db.insert_value([payload[type]],[table]) if table == vd.Visit else db.upsert_value([payload[type]],[table])
+      table.preprocess_before_upsert(payload[type])
       if table == vd.Visit :
         db.insert_value([payload[type]],[table])
-        # str_url = select_company_url(payload[type]['company_id'], db)
-        # method_result = f'{{"redirect":"{str_url}"}}'
         method_result = {"redirect":f"{select_company_url(payload[type]['company_id'], db)}"}
-        # if str_url and str_url.strip() :
-        #   method_result = {"redirect":f"{str_url}"}
-        #   return compose_redirect_response(str_url)
       else :
         db.upsert_value([payload[type]],[table])
     elif method.upper() == 'GET' :
@@ -144,16 +138,15 @@ def compose_success_response(result) -> dict:
   return {
     STATUS_CODE: OK_200,
     HEADERS: HEADERS_VALUES,
-    # BODY: str(result).replace("'",'"')
     BODY: json.dumps(result)
   }
 
-def compose_redirect_response(location:str) -> dict:
-  headers = HEADERS_VALUES.copy()
-  d_location = {"Location":f"{location}"}
-  headers.update(d_location)
-  return {
-    STATUS_CODE: OK_302,
-    HEADERS: headers,
-    BODY: json.dumps(d_location)
-  }
+# def compose_redirect_response(location:str) -> dict:
+#   headers = HEADERS_VALUES.copy()
+#   d_location = {"Location":f"{location}"}
+#   headers.update(d_location)
+#   return {
+#     STATUS_CODE: OK_302,
+#     HEADERS: headers,
+#     BODY: json.dumps(d_location)
+#   }

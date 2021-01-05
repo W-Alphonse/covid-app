@@ -135,7 +135,7 @@ class Visit(Base, BaseTable, SerializerMixin):
     return exists_select.format(criteria_sql)
 
   @classmethod
-  def preprocess_before_upsert_upsert(cls, attr:dict):
+  def preprocess_before_upsert(cls, attr:dict):
     if ('visitor_id' in attr) and (not bool(attr.get('visitor_id'))) :
        attr.pop('visitor_id')
     if ('phone_number' in attr) and (not bool(attr.get('phone_number'))) :

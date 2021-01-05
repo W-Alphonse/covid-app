@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Sequence, Unicode, String, ForeignKey, event
+from sqlalchemy import Column, Integer, Sequence, Unicode, String, ForeignKey, event, Boolean, and_
 from sqlalchemy.orm import relationship
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy_utils import EmailType, PhoneNumber, CountryType
@@ -10,7 +10,6 @@ from covcov.infrastructure.db.schema.base_domain import BaseTable
 # ========
 # Company
 # ========
-
 class Company(Base, BaseTable, SerializerMixin):
   __tablename__ = 'company'
   __table_args__ = {'extend_existing': True}
@@ -27,8 +26,10 @@ class Company(Base, BaseTable, SerializerMixin):
   contact_lname = Column(Unicode(20))
   url = Column(Unicode(128))
   arn_key = Column(Unicode(12))
+  offer = Column(Unicode(3), default='SEC', nullable=False)
+  # deleted = Column(Boolean(), default=False, nullable=False)
   #
-  rooms = relationship("Room", cascade="all,delete-orphan", backref="company")  #  https://gist.github.com/davewsmith/ab41cc4c2a189ecd4677c624ee594db3
+  rooms = relationship("Room", cascade="all,delete-orphan", backref="company", primaryjoin="and_(Room.company_id==Company.id, Room.deleted==False)", lazy="select" ) #  https://gist.github.com/davewsmith/ab41cc4c2a189ecd4677c624ee594db3
 
   @classmethod
   def enhance_payload_with_auth_token(cls, payload_attr:dict, auth_claims:dict):
@@ -48,9 +49,9 @@ class Room(Base, BaseTable, SerializerMixin):
   id = Column(String(10), primary_key=True)
   description = Column(String(30), nullable=False)
   company_id  = Column(Unicode(BaseTable.SUB_SIZE), ForeignKey("company.id", ondelete='CASCADE'), nullable=False)
+  deleted = Column(Boolean(), default=False, nullable=False)
   #
-  zones   = relationship("Zone", cascade="all, delete-orphan", backref="room")
-  # company = relationship("Company", backref=backref("rooms", cascade="all, delete-orphan"))
+  zones = relationship("Zone", cascade="all, delete-orphan", backref="room", primaryjoin="and_( and_(Zone.room_id==Room.id, Room.deleted==False) , Zone.deleted==False)", lazy="joined")  # select=>lazy | joined=>eager
   serialize_rules = ('-company',)
 
   @classmethod
@@ -71,6 +72,7 @@ class Zone(Base, BaseTable, SerializerMixin):
   id = Column(String(10), primary_key=True)
   description = Column(String(30), nullable=False)
   room_id = Column(Unicode(10), ForeignKey("room.id", ondelete='CASCADE'), nullable=False)
+  deleted = Column(Boolean(), default=False, nullable=False)
   serialize_rules = ('-room',)
 
   def __repr__(self):

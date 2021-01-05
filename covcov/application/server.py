@@ -25,7 +25,7 @@ user_pool_id   = config["cognito"]["COG_USER_POOL_ID"]
 app_client_id  = config["cognito"]["COG_APP_CLIENT_ID"]
 cognito_idp = IdpConnexion(region, user_pool_id, app_client_id)
 #
-payload_as_lambda = False
+payload_as_lambda = True
 BODY    = "body"
 
 @app.route("/company_domain", methods=["POST"])
