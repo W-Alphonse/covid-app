@@ -55,47 +55,49 @@ def check_route_consistency(method : str, tablename:str, route:str) :
 
 def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Database) -> dict:
   try :
+    # _sub = '¤ii4e4rv3s'
+    # auth_claims = {'sub': _sub,  'email': _sub + '@gmail.com' }
     method = payload.pop('method') if bool(payload.get('method'))  else '' # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
-    type = next(iter(payload))          # 1.a - type values : [company, room, zone, visit]
-    table = vd.Visit   if type == vd.Visit.__tablename__ else \
-            cd.Company if type == cd.Company.__tablename__ else \
-            cd.Room    if type == cd.Room.__tablename__ else \
-            cd.Zone    if type == cd.Zone.__tablename__ else None
+    tbl_name   = next(iter(payload))          # 1.a - type values : [company, room, zone, visit]
+    tbl_object = vd.Visit   if tbl_name == vd.Visit.__tablename__ else \
+                 cd.Company if tbl_name == cd.Company.__tablename__ else \
+                 cd.Room    if tbl_name == cd.Room.__tablename__ else \
+                 cd.Zone    if tbl_name == cd.Zone.__tablename__ else None
     check_route_consistency(method, type, route)
     if bool(qry_params):
-      payload[type].update(qry_params)  # 1.b - Add 'qry_params' to 'payload data'
-    if table == cd.Company :            # 1.c - Set the 'id' for "Company/Ars" by extracting 'sub' from the Authentication-token
+      payload[tbl_name].update(qry_params)  # 1.b - Add 'qry_params' to 'payload data'
+    if tbl_object == cd.Company :           # 1.c - Set the 'id' for "Company/Ars" by extracting 'sub' from the Authentication-token
     # if (table == cd.Company) and ( payload[type].get('id') is None) : # <-- Over Flask, it allows to bypass Cognito by injecting the 'id' in the payload
-      payload[type].update({'id': auth_claims['sub']})
+      payload[tbl_name].update({'id': auth_claims['sub']})
     #
     # 2 - According to method type, decide how to route the Payload
     method_result="Success :-)"
     if method.upper() == 'POST' or method.upper() == 'PUT' :
-      table.enhance_payload_with_auth_token(payload[type], auth_claims)
-      table.check_business_rules_for_upsert(payload[type])
-      table.preprocess_before_upsert(payload[type])
-      if table == vd.Visit :
-        db.insert_value([payload[type]],[table])
-        method_result = {"redirect":f"{select_company_url(payload[type]['company_id'], db)}"}
+      tbl_object.enhance_payload_with_auth_token(payload[tbl_name], auth_claims)
+      tbl_object.check_business_rules_for_upsert(payload[tbl_name])
+      tbl_object.preprocess_before_upsert(payload[tbl_name])
+      if tbl_object == vd.Visit :
+        db.insert_value([payload[tbl_name]],[tbl_object])
+        method_result = {"redirect":f"{select_company_url(payload[tbl_name]['company_id'], db)}"}
       else :
-        db.upsert_value([payload[type]],[table])
+        db.upsert_value([payload[tbl_name]],[tbl_object])
     elif method.upper() == 'GET' :
-      method_result =  db.select_rows( [table(**payload[type])] , [table])
+      method_result =  db.select_rows( [tbl_object(**payload[tbl_name])] , [tbl_object])
     elif (route == '/a_ccontact') or (route == '/c_ccontact') :
       if route == '/c_ccontact' :
-        payload[type].update({'company_id': auth_claims['sub']})
-      sql_stmts_kv = vd.Visit.compose_ccontact_sqls(payload[type])
+        payload[tbl_name].update({'company_id': auth_claims['sub']})
+      sql_stmts_kv = vd.Visit.compose_ccontact_sqls(payload[tbl_name])
       result_list = db.native_select_rows(list(sql_stmts_kv.values()), 0)
       method_result = vd.Visit.compose_ccontact_result(list(sql_stmts_kv.keys()), result_list)
     elif method.upper() == 'DELETE' :
-      db.delete_rows([payload[type]],[table])
+      db.delete_rows([payload[tbl_name]],[tbl_object])
     elif method.upper() == 'RESET_TABLES' :
       db.reset_tables()
     elif method.upper() == 'FILL_TABLES' :
-      cd.create_company( payload[type]["company_id"], payload[type]["company_name"], payload[type]["company_email"] )
-      vd.create_visit(payload[type]["company_id"])
+      cd.create_company( payload[tbl_name]["company_id"], payload[tbl_name]["company_name"], payload[tbl_name]["company_email"] )
+      vd.create_visit(payload[tbl_name]["company_id"])
     else :
-      raise Exception(f"Unrecognized 'method' value '{method}' or table '{str(type)}'. Value should be one of [POST, PUT, DELETE, GET, CONNECT]")
+      raise Exception(f"Unrecognized 'method' value '{method}' or table '{str(tbl_name)}'. Value should be one of [POST, PUT, DELETE, GET, CONNECT]")
     return compose_success_response(method_result)
   except Exception as ex:
     return _compose_error_response(ex)
@@ -113,7 +115,6 @@ def _compose_error_response(ex: Exception) -> dict:
   return {
     STATUS_CODE: KO_500,
     HEADERS : headers,
-    # BODY: json.dumps({"errorMessage" : "Error of type [{}] occured : {}".format(type(ex), str(ex).replace('"', "'").replace('\n', '').strip("' ")) \
     BODY: json.dumps({"errorMessage" : "Error of type [{}] occured : {}.".format(type(ex), str(ex).replace('"', "'").replace('\n', '')) \
                                        + "   --> ".join( [elmt.replace('"', "'").replace('\n','').strip("' ") for elmt in traceback.format_tb(ex.__traceback__)] )})
   }

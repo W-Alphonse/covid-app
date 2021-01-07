@@ -13,8 +13,6 @@ from sqlalchemy.orm import sessionmaker, ColumnProperty, Query
 
 from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.connexion import Connexion
-import covcov.infrastructure.db.schema.company_domain
-import covcov.infrastructure.db.schema.visit_domain
 
 logger = logging.getLogger(__name__)
 
@@ -30,12 +28,10 @@ class Database :
     Base.metadata.drop_all(self.engine)
     Base.metadata.create_all(self.engine)
 
-  def insert_value(self, datas:[typing.Union[dict, str]], tables:[DeclarativeMeta]):
+  def insert_value(self, payloads:[typing.Union[dict, str]], tables:[DeclarativeMeta]):
     with self.session_scope() as session:
-      for i, data in enumerate(datas) :
-        # if "password" in (data if isinstance(data,dict) else json.loads(data)) :
-        #   data["password"] = self._encrypt(data["password"])
-        insert_stmt = insert(tables[i]).values(data if isinstance(data,dict) else json.loads(data) )
+      for i, payload in enumerate(payloads) :
+        insert_stmt = insert(tables[i]).values(payload if isinstance(payload,dict) else json.loads(payload) )
         # logger.info(str(insert_stmt))
         session.execute(insert_stmt)
 
@@ -43,8 +39,6 @@ class Database :
   def upsert_value_with_overwrite(self, datas:[typing.Union[dict, str]], tables:[DeclarativeMeta]):
     with self.session_scope() as session:
       for i, data in enumerate(datas) :
-        # if "password" in (data if isinstance(data,dict) else json.loads(data)) :
-        #   data["password"] = self._encrypt(data["password"])
         insert_stmt = insert(tables[i]).values(data if isinstance(data,dict) else json.loads(data) )
         columns_to_exlcude_from_update = [col.name for col in tables[i].__table__.c
                                           if col not in list(tables[i].__table__.primary_key.columns) and col.name not in data.keys()]
@@ -55,16 +49,19 @@ class Database :
         session.execute(do_upsert_stmt)
 
 
-  def upsert_value(self, datas:[typing.Union[dict, str]], tables:[DeclarativeMeta]):
+  def upsert_value(self, payloads:[typing.Union[dict, str]], tables:[DeclarativeMeta]):
     with self.session_scope() as session:
-      for i, data in enumerate(datas) :
-        already_exist = session.query(literal(True)).filter(session.query(tables[i]).filter(tables[i].id == data['id']).exists()).scalar()
+      for i, payload in enumerate(payloads) :
+        already_exist = session.query(literal(True)).filter(session.query(tables[i]).filter(tables[i].id == payload['id']).exists()).scalar()
         if already_exist:
-          # if "password" in (data if isinstance(data,dict) else json.loads(data)) :
-          #   data["password"] = self._encrypt(data["password"])
-          session.execute( update(tables[i]).where(tables[i].id == data['id']).values(datas[i]) )
+          # tables[i].check_business_rules_for_upsert(payload)
+          cloned_payload= payloads[i].copy()
+          id = cloned_payload.pop('id')
+          session.execute( update(tables[i]).where(tables[i].id == id).values(cloned_payload) )
+          tables[i].execute_on_update(session, id, cloned_payload)
+          # stmt = update(users).where(users.c.id==5).values(name='user #5')
         else :
-          self.insert_value(datas, tables)
+            self.insert_value(payloads, tables)
 
 
 
@@ -82,6 +79,11 @@ class Database :
         for row in session.query(tables[i]).filter(tables[i].id == data.id).all() :
           rows.append( self._remove_dict_keys( self._remove_dict_values(row.to_dict(), [None]) , columns_to_filter) )
     return rows
+
+  def native_delete_rows(self, sql_queries:[str]) -> [int] :
+    result = []
+    for i, sql_query in enumerate(sql_queries) :
+      resultProxy = self.engine.execute(sql_query)
 
   """
     sql_queries:[str]  - Array of SQL queries to be executed unconditionally, exception made to the last query in the array.

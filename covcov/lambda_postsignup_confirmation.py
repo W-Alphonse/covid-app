@@ -1,6 +1,8 @@
 import logging
+
 from covcov.infrastructure.db.database import Database
 from covcov.application import route_dispatcher
+from covcov.application import misc_utils as util
 from covcov.infrastructure.configuration import config
 
 logger = logging.getLogger(__name__)
@@ -14,11 +16,24 @@ def handle(event, context):
   # print("** event ** :" + str(event))
   user_attrs = event ['request']['userAttributes']
   if event['region'] == region and event['userPoolId'] == user_pool_id  and event['triggerSource'] == 'PostConfirmation_ConfirmSignUp' and \
-    user_attrs ['email_verified'] == 'true' and user_attrs['cognito:user_status'] == 'CONFIRMED' :
+     user_attrs ['email_verified'] == 'true' and user_attrs['cognito:user_status'] == 'CONFIRMED' :
     body = { 'method' : 'POST',
              'company': {"name": f"{event['userName']}" } }
-    route_dispatcher.dispatch(body, None, {'sub': user_attrs ['sub'],  'email': user_attrs['email'] } , '/company_domain', db)
+    auth_claim = {'sub': user_attrs ['sub'],  'email': user_attrs['email'] }
+    route_dispatcher.dispatch(body, None,  auth_claim, '/company_domain', db)
+    #
+    s1 = util.gen_room('Salle 1', auth_claim, db)
+    s2 = util.gen_room('Salle de réunion', auth_claim, db)
+    #
+    util.gen_zone(s1['room']['id'], 'Table 1', auth_claim)
+    util.gen_zone(s1['room']['id'], 'Table 2', auth_claim)
+    util.gen_zone(s1['room']['id'], 'Table 3', auth_claim)
+    #
+    util.gen_zone(s2['room']['id'], 'Salle 1', auth_claim)
+    util.gen_zone(s2['room']['id'], 'Salle 2', auth_claim)
+
   return event
+
 
 # {
 #   "version":"1",

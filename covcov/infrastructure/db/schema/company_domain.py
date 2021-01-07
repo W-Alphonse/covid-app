@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, Sequence, Unicode, String, ForeignKey, event, Boolean, and_
-from sqlalchemy.orm import relationship
+import datetime
+
+from sqlalchemy import Column, Integer, Sequence, Unicode, String, ForeignKey, event, Boolean, and_, Date, DateTime, update
+from sqlalchemy.orm import relationship, Session
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy_utils import EmailType, PhoneNumber, CountryType
 
@@ -27,7 +29,10 @@ class Company(Base, BaseTable, SerializerMixin):
   url = Column(Unicode(128))
   arn_key = Column(Unicode(12))
   offer = Column(Unicode(3), default='SEC', nullable=False)
-  # deleted = Column(Boolean(), default=False, nullable=False)
+  deleted = Column(Boolean(), default=False, nullable=False)
+  creation_dt    = Column(DateTime, default=datetime.datetime.now(), nullable=False)
+  activation_dt = Column(DateTime, default=datetime.datetime.now(), nullable=False)
+  deletion_dt   = Column(DateTime)
   #
   rooms = relationship("Room", cascade="all,delete-orphan", backref="company", primaryjoin="and_(Room.company_id==Company.id, Room.deleted==False)", lazy="select" ) #  https://gist.github.com/davewsmith/ab41cc4c2a189ecd4677c624ee594db3
 
@@ -50,6 +55,9 @@ class Room(Base, BaseTable, SerializerMixin):
   description = Column(String(30), nullable=False)
   company_id  = Column(Unicode(BaseTable.SUB_SIZE), ForeignKey("company.id", ondelete='CASCADE'), nullable=False)
   deleted = Column(Boolean(), default=False, nullable=False)
+  creation_dt   = Column(DateTime, default=datetime.datetime.now(), nullable=False)
+  activation_dt = Column(DateTime, default=datetime.datetime.now(), nullable=False)
+  deletion_dt   = Column(DateTime)
   #
   zones = relationship("Zone", cascade="all, delete-orphan", backref="room", primaryjoin="and_( and_(Zone.room_id==Room.id, Room.deleted==False) , Zone.deleted==False)", lazy="joined")  # select=>lazy | joined=>eager
   serialize_rules = ('-company',)
@@ -58,9 +66,27 @@ class Room(Base, BaseTable, SerializerMixin):
   def enhance_payload_with_auth_token(cls, payload_attr:dict, auth_claims:dict):
     payload_attr.update({'company_id': auth_claims['sub']})
 
+  @classmethod
+  def preprocess_before_upsert(cls, payload_attr:dict):
+    handle_delete_flag(payload_attr)
+
+  @classmethod
+  def execute_on_update(cls, session:Session, id:str, cloned_payload:dict):
+    if 'deleted' in cloned_payload :
+      cloned_payload.pop('company_id')
+      session.execute( update(Zone).where(Zone.room_id == id).values(cloned_payload) )
 
   def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.description}, FK.company_id={self.company_id})"
+
+
+def handle_delete_flag(payload_attr:dict):
+  if 'deleted' in payload_attr :
+    if payload_attr.get('deleted') :
+      payload_attr['deletion_dt'] = datetime.datetime.now()
+    else :
+      payload_attr['deletion_dt'] = None
+      payload_attr['activation_dt'] = datetime.datetime.now()
 
 #======
 # ZONE
@@ -73,7 +99,15 @@ class Zone(Base, BaseTable, SerializerMixin):
   description = Column(String(30), nullable=False)
   room_id = Column(Unicode(10), ForeignKey("room.id", ondelete='CASCADE'), nullable=False)
   deleted = Column(Boolean(), default=False, nullable=False)
+  creation_dt   = Column(DateTime, default=datetime.datetime.now(), nullable=False)
+  activation_dt = Column(DateTime, default=datetime.datetime.now(), nullable=False)
+  deletion_dt = Column(DateTime)
+  #
   serialize_rules = ('-room',)
+
+  @classmethod
+  def preprocess_before_upsert(cls, payload_attr:dict):
+    handle_delete_flag(payload_attr)
 
   def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.description}, FK.room_id={self.room_id})"

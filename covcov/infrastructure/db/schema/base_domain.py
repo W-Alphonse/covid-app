@@ -1,3 +1,6 @@
+from sqlalchemy.orm import Session
+
+
 class BaseTable :
   SUB_SIZE = 36
 
@@ -16,3 +19,8 @@ class BaseTable :
   @classmethod
   def preprocess_before_upsert(cls, payload_attr:dict):
     pass
+
+  @classmethod
+  def execute_on_update(cls, session:Session, id: str, payload_attr:dict):
+    pass
+
