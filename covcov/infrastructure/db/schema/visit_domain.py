@@ -47,7 +47,7 @@ class Visit(Base, BaseTable, SerializerMixin):
   phone_number = Column(Unicode(20))
   fname = Column(Unicode(20))
   lname = Column(Unicode(20))
-  visit_datetime = Column(DateTime, default=datetime.datetime.now(), nullable=False)
+  visit_datetime = Column(DateTime, default=datetime.datetime.now, nullable=False)
 
   def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.company.description}, {self.room.description}, {self.zone.description}, {self.visit_datetime})"
@@ -163,26 +163,56 @@ class Visit(Base, BaseTable, SerializerMixin):
     if visiting_date_criteria_is_missing :
       raise ValueError(f"Please indicate 'visiting date' before search")
 
+  @classmethod
+  def compose_purge_sqls(cls, days_count:float, chunk_size:int):
+    dt = datetime.datetime.now() - datetime.timedelta(days=days_count)
+    str_now = datetime.datetime.strftime(dt, "%Y-%m-%d %H:%M:%S")
+    sql = []
+    sql.append(insert_hist.format(str_now, chunk_size))
+    sql.append(delete_visit.format(str_now, chunk_size))
+    return sql
+
+# ============
+#  VisitHisto
+# ============
+delete_visit = "delete from visit where id = any (array(SELECT id FROM visit where visit_datetime < TIMESTAMP '{}' limit {})) "
+insert_hist = "insert into visit_histo(id, company_id, room_id, zone_id, visitor_id, phone_number, visit_datetime, creation_dt) " \
+              "select id, company_id, room_id, zone_id, visitor_id, phone_number, visit_datetime, now() from visit where visit_datetime < TIMESTAMP '{}' limit {} "
+
+class VisitHist(Base, BaseTable, SerializerMixin):
+  __tablename__ = 'visit_histo'
+  __table_args__ = {'extend_existing': True}
+  #
+  id = Column(BigInteger, autoincrement=False, primary_key=True)
+  company_id  = Column(Unicode(BaseTable.SUB_SIZE), ForeignKey("company.id"), nullable=False)
+  room_id     = Column(Unicode(10), ForeignKey("room.id"), nullable=False)
+  zone_id     = Column(Unicode(10), ForeignKey("zone.id"), nullable=False)
+  #
+  visitor_id  = Column(Unicode(15))
+  phone_number = Column(Unicode(20))
+  visit_datetime = Column(DateTime, nullable=False)
+  creation_dt    = Column(DateTime, default=datetime.datetime.now, nullable=False)
+
+  def __repr__(self):
+    return f"{self.__tablename__}({self.id}, {self.company.description}, {self.room.description}, {self.zone.description}, {self.visit_datetime})"
+
+
 
 def create_visit(comp_id:str, pfix='X') :
   from covcov.infrastructure.db.database import Database
   db = Database("database")
         # db.insert_value(['{"id":"visit_1", "company_id": comp_id, "room_id": "room_100.1", "zone_id": "z_100.1.1", "visitor_fname":"Jean", "visitor_lname": "De La Fontaine", "visitor_phone_number": "0661794641" }'], [Visit])
-
   # Visit on ROOM_1 / z_0.1.1                                                                                               +33611123262
   db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.1", "zone_id": "{pfix}z_0.1.1", "phone_number": "+33611223262" }}'], [Visit])
   db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.1", "zone_id": "{pfix}z_0.1.1", "phone_number": "+33611223263" }}'], [Visit])
   db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.1", "zone_id": "{pfix}z_0.1.1", "phone_number": "+33611223264" }}'], [Visit])
-
   # Visit on ROOM_1 / z_0.1.3
   db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.1", "zone_id": "{pfix}z_0.1.3", "phone_number": "+33611223262" }}'], [Visit])
   db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.1", "zone_id": "{pfix}z_0.1.3", "phone_number": "+33611223271" }}'], [Visit])
-
   # Visit on ROOM_2 / z_0.2.1
   db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.2", "zone_id": "{pfix}z_0.2.1", "phone_number": "+33611223262" }}'], [Visit])
   db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.2", "zone_id": "{pfix}z_0.2.1", "phone_number": "+33611223281" }}'], [Visit])
   db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.2", "zone_id": "{pfix}z_0.2.1", "phone_number": "+33611223264" }}'], [Visit])
-
   # Visit on ROOM_2 / z_0.2.2
   db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.2", "zone_id": "{pfix}z_0.2.2", "phone_number": "+33611223291" }}'], [Visit])
   db.insert_value([f'{{"company_id": "{comp_id}", "room_id": "{pfix}room_0.2", "zone_id": "{pfix}z_0.2.2", "phone_number": "+33611223292" }}'], [Visit])

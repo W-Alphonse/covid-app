@@ -63,7 +63,7 @@ def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Data
                  cd.Company if tbl_name == cd.Company.__tablename__ else \
                  cd.Room    if tbl_name == cd.Room.__tablename__ else \
                  cd.Zone    if tbl_name == cd.Zone.__tablename__ else None
-    check_route_consistency(method, type, route)
+    check_route_consistency(method, tbl_name, route)
     if bool(qry_params):
       payload[tbl_name].update(qry_params)  # 1.b - Add 'qry_params' to 'payload data'
     if tbl_object == cd.Company :           # 1.c - Set the 'id' for "Company/Ars" by extracting 'sub' from the Authentication-token

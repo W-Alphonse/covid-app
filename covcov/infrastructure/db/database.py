@@ -13,6 +13,8 @@ from sqlalchemy.orm import sessionmaker, ColumnProperty, Query
 
 from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.connexion import Connexion
+import covcov.infrastructure.db.schema.company_domain
+import covcov.infrastructure.db.schema.visit_domain
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +24,8 @@ class Database :
     self.engine = Connexion(database_key).connect()
     self.session = sessionmaker(bind=self.engine)
 
+  def create_missing_tables(self):
+    Base.metadata.create_all(self.engine)
 
   def reset_tables(self):
     logger.info(f'Reset the database.')
@@ -65,11 +69,11 @@ class Database :
 
 
 
-  def delete_rows(self, datas:[Base], tables:[DeclarativeMeta]):
+  def delete_rows(self, payloads:[dict], tables:[DeclarativeMeta]):
     with self.session_scope() as session:
-      for i, data in enumerate(datas) :
+      for i, payload in enumerate(payloads) :
         # delete_stmt = delete(tables[i]).where(id = data.row['id'])
-        session.query(tables[i]).filter(tables[i].id == data['id']).delete()
+        session.query(tables[i]).filter(tables[i].id == payload['id']).delete()
 
 
   def select_rows(self, datas:[Base], tables:[DeclarativeMeta], columns_to_filter:[str]=None) -> [dict] :
@@ -80,10 +84,12 @@ class Database :
           rows.append( self._remove_dict_keys( self._remove_dict_values(row.to_dict(), [None]) , columns_to_filter) )
     return rows
 
-  def native_delete_rows(self, sql_queries:[str]) -> [int] :
-    result = []
-    for i, sql_query in enumerate(sql_queries) :
-      resultProxy = self.engine.execute(sql_query)
+  def native_execute_sqls(self, sql_queries:[str]) -> [int] :
+    counts = []
+    with self.session_scope() as session:
+      for i, sql_query in enumerate(sql_queries) :
+        counts.append( self.engine.execute(sql_query).rowcount) # <-- self.engine.execute(sql_query) is of type ResultProxy
+    return counts
 
   """
     sql_queries:[str]  - Array of SQL queries to be executed unconditionally, exception made to the last query in the array.

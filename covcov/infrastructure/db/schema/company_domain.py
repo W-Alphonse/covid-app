@@ -30,8 +30,8 @@ class Company(Base, BaseTable, SerializerMixin):
   arn_key = Column(Unicode(12))
   offer = Column(Unicode(3), default='SEC', nullable=False)
   deleted = Column(Boolean(), default=False, nullable=False)
-  creation_dt    = Column(DateTime, default=datetime.datetime.now(), nullable=False)
-  activation_dt = Column(DateTime, default=datetime.datetime.now(), nullable=False)
+  creation_dt    = Column(DateTime, default=datetime.datetime.now, nullable=False)
+  activation_dt = Column(DateTime, default=datetime.datetime.now, nullable=False)
   deletion_dt   = Column(DateTime)
   #
   rooms = relationship("Room", cascade="all,delete-orphan", backref="company", primaryjoin="and_(Room.company_id==Company.id, Room.deleted==False)", lazy="select" ) #  https://gist.github.com/davewsmith/ab41cc4c2a189ecd4677c624ee594db3
@@ -55,8 +55,8 @@ class Room(Base, BaseTable, SerializerMixin):
   description = Column(String(30), nullable=False)
   company_id  = Column(Unicode(BaseTable.SUB_SIZE), ForeignKey("company.id", ondelete='CASCADE'), nullable=False)
   deleted = Column(Boolean(), default=False, nullable=False)
-  creation_dt   = Column(DateTime, default=datetime.datetime.now(), nullable=False)
-  activation_dt = Column(DateTime, default=datetime.datetime.now(), nullable=False)
+  creation_dt   = Column(DateTime, default=datetime.datetime.now, nullable=False)
+  activation_dt = Column(DateTime, default=datetime.datetime.now, nullable=False)
   deletion_dt   = Column(DateTime)
   #
   zones = relationship("Zone", cascade="all, delete-orphan", backref="room", primaryjoin="and_( and_(Zone.room_id==Room.id, Room.deleted==False) , Zone.deleted==False)", lazy="joined")  # select=>lazy | joined=>eager
@@ -99,8 +99,8 @@ class Zone(Base, BaseTable, SerializerMixin):
   description = Column(String(30), nullable=False)
   room_id = Column(Unicode(10), ForeignKey("room.id", ondelete='CASCADE'), nullable=False)
   deleted = Column(Boolean(), default=False, nullable=False)
-  creation_dt   = Column(DateTime, default=datetime.datetime.now(), nullable=False)
-  activation_dt = Column(DateTime, default=datetime.datetime.now(), nullable=False)
+  creation_dt   = Column(DateTime, default=datetime.datetime.now, nullable=False)
+  activation_dt = Column(DateTime, default=datetime.datetime.now, nullable=False)
   deletion_dt = Column(DateTime)
   #
   serialize_rules = ('-room',)
