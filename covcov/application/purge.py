@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 SUCCES_CODE = 0
 ERROR_CODE  = 1
-def archive_visit(db:Database, days_count=14, chunk_size=500) -> int:
+def archive_visit(db:Database, days_count=15, chunk_size=300) -> int:
   t1 = datetime.datetime.now()
   counts = [chunk_size]
   cumul = 0
