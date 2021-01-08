@@ -1,5 +1,6 @@
 import datetime
 from sqlalchemy import Column, Unicode, ForeignKey, DateTime, Integer, Sequence, BigInteger
+from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy_serializer import SerializerMixin
 
 from covcov.infrastructure.db import Base
@@ -173,11 +174,11 @@ class Visit(Base, BaseTable, SerializerMixin):
     return sql
 
 # ============
-#  VisitHisto
+#  VisitHisto   sha256(c.name::bytea)
 # ============
 delete_visit = "delete from visit where id = any (array(SELECT id FROM visit where visit_datetime < TIMESTAMP '{}' limit {})) "
 insert_hist = "insert into visit_histo(id, company_id, room_id, zone_id, visitor_id, phone_number, visit_datetime, creation_dt) " \
-              "select id, company_id, room_id, zone_id, visitor_id, phone_number, visit_datetime, now() from visit where visit_datetime < TIMESTAMP '{}' limit {} "
+              "select id, company_id, room_id, zone_id, sha256(visitor_id::bytea) as visitor_id, sha256(phone_number::bytea) as phone_number, visit_datetime, now() from visit where visit_datetime < TIMESTAMP '{}' limit {} "
 
 class VisitHist(Base, BaseTable, SerializerMixin):
   __tablename__ = 'visit_histo'
@@ -188,8 +189,8 @@ class VisitHist(Base, BaseTable, SerializerMixin):
   room_id     = Column(Unicode(10), ForeignKey("room.id"), nullable=False)
   zone_id     = Column(Unicode(10), ForeignKey("zone.id"), nullable=False)
   #
-  visitor_id  = Column(Unicode(15))
-  phone_number = Column(Unicode(20))
+  visitor_id  = Column(BYTEA(32))
+  phone_number = Column(BYTEA(32))
   visit_datetime = Column(DateTime, nullable=False)
   creation_dt    = Column(DateTime, default=datetime.datetime.now, nullable=False)
 

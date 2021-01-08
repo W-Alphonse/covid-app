@@ -24,8 +24,8 @@ def archive_visit(db:Database, days_count=14, chunk_size=500) -> int:
     logger.info(f"Batch 'archive_visit(days_count={days_count},chunk_size={chunk_size})' finished after {(datetime.datetime.now() -t1).seconds} seconds.\nIt archived {cumul} Visit(s)" )
 
 
-if __name__ == '__main__':
-  from covcov.infrastructure.db.database import Database
-  db = Database("database")
-  db.create_missing_tables()
-  archive_visit(db, 0.0139, 10)
+# if __name__ == '__main__':
+#   from covcov.infrastructure.db.database import Database
+#   db = Database("database")
+#   db.create_missing_tables()
+#   archive_visit(db, 0.2, 10)
