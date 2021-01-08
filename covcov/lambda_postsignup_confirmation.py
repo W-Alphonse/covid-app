@@ -25,12 +25,12 @@ def handle(event, context):
     s1 = util.gen_room('Salle 1', auth_claim, db)
     s2 = util.gen_room('Salle de réunion', auth_claim, db)
     #
-    util.gen_zone(s1['room']['id'], 'Table 1', auth_claim)
-    util.gen_zone(s1['room']['id'], 'Table 2', auth_claim)
-    util.gen_zone(s1['room']['id'], 'Table 3', auth_claim)
+    util.gen_zone(s1['room']['id'], 'Table 1', auth_claim, db)
+    util.gen_zone(s1['room']['id'], 'Table 2', auth_claim, db)
+    util.gen_zone(s1['room']['id'], 'Table 3', auth_claim, db)
     #
-    util.gen_zone(s2['room']['id'], 'Salle 1', auth_claim)
-    util.gen_zone(s2['room']['id'], 'Salle 2', auth_claim)
+    util.gen_zone(s2['room']['id'], 'Salle 1', auth_claim, db)
+    util.gen_zone(s2['room']['id'], 'Salle 2', auth_claim, db)
 
   return event
 
