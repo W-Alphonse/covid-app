@@ -45,6 +45,7 @@ def visit_api():
 @cross_origin(headers=['Content-Type'])
 def c_ccontact_api():
     return _process_result(route_dispatcher.dispatch(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'],'id'), request.path, db))
+    # return _process_result(route_dispatcher.dispatch(request.get_json(), request.args, {'sub':'57976c93-cd46-44c4-82c1-6271abc0c319'}, request.path, db))
 
 @app.route("/a_ccontact", methods=["POST"])
 @cross_origin(headers=['Content-Type'])

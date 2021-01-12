@@ -1,10 +1,12 @@
 import datetime
 
 from sqlalchemy import Column, Integer, Sequence, Unicode, String, ForeignKey, event, Boolean, and_, Date, DateTime, update
+from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy_utils import EmailType, PhoneNumber, CountryType
 
+from covcov.application.BusinessException import BusinessException
 from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.schema.base_domain import BaseTable
 
@@ -30,6 +32,7 @@ class Company(Base, BaseTable, SerializerMixin):
   url = Column(Unicode(128))
   arn_key = Column(Unicode(12))
   offer = Column(Unicode(3), default='SEC', nullable=False)
+  max_zone = Column(Integer, default=30, nullable=False)
   deleted = Column(Boolean(), default=False, nullable=False)
   creation_dt    = Column(DateTime, default=datetime.datetime.now, nullable=False)
   activation_dt = Column(DateTime, default=datetime.datetime.now, nullable=False)
@@ -92,6 +95,15 @@ def handle_delete_flag(payload_attr:dict):
 #======
 # ZONE
 #======
+''' result can be 1 or 2 values dataset; It interpretation follow the folowing priorities:
+    result == -1 => row exist and Max Zone not reached yet
+    result >   0 => Max Zone reached and its value is 'result'
+    # result ==  0 => Zone inexistent '''
+max_zone_sql = "select -1 as maxzone from company c where c.id = '{company_id}' and ( c.max_zone = -1 or c.max_zone > " \
+               "(select count(*) from zone where room_id in (select id from room where company_id = '{company_id}')) ) " \
+               "union select max_zone as maxzone from company c where c.id = '{company_id}' " \
+               # "union select 0 as maxzone order by maxzone"
+
 class Zone(Base, BaseTable, SerializerMixin):
   __tablename__ = 'zone'
   __table_args__ = {'extend_existing': True}
@@ -113,6 +125,14 @@ class Zone(Base, BaseTable, SerializerMixin):
   def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.description}, FK.room_id={self.room_id})"
 
+
+  @classmethod
+  def check_exists(cls, db, id: str, company_id:str, table:DeclarativeMeta):
+    max_zone_list = db.native_select_rows([max_zone_sql.format(company_id=company_id)])[0]
+    if len(max_zone_list['maxzone']) == 2 :      # => max_zone not reached yet
+      return super().check_exists(db, id, company_id, table)
+    else : # len(max_zone_list) == 1 => max_zone reached
+      raise BusinessException( {"max_zone_reached": max_zone_list['maxzone'][0]} )
 
 #-- "company sub": "caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e" | "...f" | "...g" --#  {pfix}
 def create_company(comp_id:str, comp_name:str, comp_email:str, url:str, pfix='X'):

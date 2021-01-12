@@ -4,6 +4,7 @@ import traceback
 
 import covcov.infrastructure.db.schema.company_domain as cd
 import covcov.infrastructure.db.schema.visit_domain as vd
+from covcov.application.BusinessException import BusinessException
 from covcov.infrastructure.db.database import Database
 
 logger = logging.getLogger(__name__)
@@ -80,7 +81,7 @@ def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Data
         db.insert_value([payload[tbl_name]],[tbl_object])
         method_result = {"redirect":f"{select_company_url(payload[tbl_name]['company_id'], db)}"}
       else :
-        db.upsert_value([payload[tbl_name]],[tbl_object])
+        db.upsert_value([payload[tbl_name]],[tbl_object], auth_claims['sub'])
     elif method.upper() == 'GET' :
       method_result =  db.select_rows( [tbl_object(**payload[tbl_name])] , [tbl_object])
     elif (route == '/a_ccontact') or (route == '/c_ccontact') :
@@ -99,6 +100,8 @@ def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Data
     else :
       raise Exception(f"Unrecognized 'method' value '{method}' or table '{str(tbl_name)}'. Value should be one of [POST, PUT, DELETE, GET, CONNECT]")
     return compose_success_response(method_result)
+  except BusinessException as ex:
+    return compose_success_response(ex.context)
   except Exception as ex:
     return _compose_error_response(ex)
     # raise Exception(str(_compose_error_response(ex) ))
@@ -142,12 +145,12 @@ def compose_success_response(result) -> dict:
     BODY: json.dumps(result)
   }
 
-# def compose_redirect_response(location:str) -> dict:
-#   headers = HEADERS_VALUES.copy()
-#   d_location = {"Location":f"{location}"}
-#   headers.update(d_location)
-#   return {
-#     STATUS_CODE: OK_302,
-#     HEADERS: headers,
-#     BODY: json.dumps(d_location)
-#   }
+def compose_redirect_response(location:str) -> dict:
+  headers = HEADERS_VALUES.copy()
+  d_location = {"Location":f"{location}"}
+  headers.update(d_location)
+  return {
+    STATUS_CODE: OK_302,
+    HEADERS: headers,
+    BODY: json.dumps(d_location)
+  }

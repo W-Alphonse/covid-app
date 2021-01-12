@@ -53,10 +53,11 @@ class Database :
         session.execute(do_upsert_stmt)
 
 
-  def upsert_value(self, payloads:[typing.Union[dict, str]], tables:[DeclarativeMeta]):
+  def upsert_value(self, payloads:[typing.Union[dict, str]], tables:[DeclarativeMeta], company_id:str):
     with self.session_scope() as session:
       for i, payload in enumerate(payloads) :
-        already_exist = session.query(literal(True)).filter(session.query(tables[i]).filter(tables[i].id == payload['id']).exists()).scalar()
+        # already_exist = session.query(literal(True)).filter(session.query(tables[i]).filter(tables[i].id == payload['id']).exists()).scalar()
+        already_exist = tables[i].check_exists(self, payload['id'], company_id, tables[i])
         if already_exist:
           # tables[i].check_business_rules_for_upsert(payload)
           cloned_payload= payloads[i].copy()
@@ -96,13 +97,13 @@ class Database :
     master_qry_ndx:int - If equal to -1, Then the last query will be executed unconditionally;
                          Otherwise, the last query will be executed if the related 'master query' result was empty
   """
-  def native_select_rows(self, sql_queries:[str], master_qry_ndx=-1, lqry_default_rest={"exists":True}) -> [{}] :
+  def native_select_rows(self, sql_queries:[str], master_qry_ndx=-1, lqry_default_result={"exists":True}) -> [{}] :
     result = []
     master_qry_has_result = False
     for i, sql_query in enumerate(sql_queries) :
       # 1 - Check whether we should execute the last query
       if (sql_query == sql_queries[-1]) and (master_qry_ndx != -1) and master_qry_has_result:
-        result.append(lqry_default_rest)
+        result.append(lqry_default_result)
         continue
       # 2 - Execute the query ...
       resultProxy = self.engine.execute(sql_query)  # <-- ResultProxy object is made up of RowProxy objects

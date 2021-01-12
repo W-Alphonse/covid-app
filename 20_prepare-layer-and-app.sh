@@ -16,6 +16,8 @@ zip -g ../build_zipped/covcov-app.zip ./lambda_cas_contact.py
 zip -g ../build_zipped/covcov-app.zip ./lambda_postsignup_confirmation.py
 zip -g ../build_zipped/covcov-app.zip ./lambda_histo_visit.py
 zip -g ../build_zipped/covcov-app.zip ./lambda_presignup.py; cd ..
+# zip -g ../build_zipped/covcov-app.zip ./lambda_email_verification.py
+# zip -g ../build_zipped/covcov-app.zip ./lambda_email_verification_handler.py
 
 # 4 - Delete the unrequired artifacts
 zip -d ./build_zipped/covcov-app.zip covcov/lambda_company_domain.py
@@ -24,6 +26,8 @@ zip -d ./build_zipped/covcov-app.zip covcov/lambda_cas_contact.py
 zip -d ./build_zipped/covcov-app.zip covcov/lambda_postsignup_confirmation.py
 zip -d ./build_zipped/covcov-app.zip covcov/lambda_histo_visit.py
 zip -d ./build_zipped/covcov-app.zip covcov/lambda_presignup.py
+# zip -d ./build_zipped/covcov-app.zip covcov/lambda_email_verification.py
+# zip -d ./build_zipped/covcov-app.zip covcov/lambda_email_verification_handler.py
 
 zip -d ./build_zipped/covcov-app.zip covcov/application/server.py
 zip -d ./build_zipped/covcov-app.zip covcov/requirements-flask.txt

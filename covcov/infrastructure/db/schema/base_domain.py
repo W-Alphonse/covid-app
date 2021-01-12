@@ -1,7 +1,8 @@
+from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm import Session
 
 
-class BaseTable :
+class BaseTable:
   SUB_SIZE = 36
 
   @classmethod
@@ -24,3 +25,10 @@ class BaseTable :
   def execute_on_update(cls, session:Session, id: str, payload_attr:dict):
     pass
 
+  @classmethod
+  def execute_on_update(cls, session:Session, id: str, payload_attr:dict):
+    pass
+
+  @classmethod
+  def check_exists(cls, db, id:str, company_id:str, table:DeclarativeMeta):
+    return db.native_execute_sqls([f"select 1 from {table.__name__} where id = '{id}'" ])[0] != 0
