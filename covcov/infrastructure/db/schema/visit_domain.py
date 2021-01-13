@@ -68,7 +68,7 @@ class Visit(Base, BaseTable, SerializerMixin):
     #
     result = {}
     result['code'] = 0 if len(data[cls.RAW_DATA]['company']) > 0 else \
-                     1 if exists['exists'] else 2
+                     1 if exists['exists'][0] == True else 2
     result['description'] =  'Données disponibles' if result['code'] == 0 else \
                              'Aucun cas contact trouvé' if result['code'] == 1 else "L identificateur saisi n existe pas en base"
     result['data'] = data
