@@ -100,7 +100,7 @@ def handle_delete_flag(payload_attr:dict):
     result >   0 => Max Zone reached and its value is 'result'
     # result ==  0 => Zone inexistent '''
 max_zone_sql = "select -1 as maxzone from company c where c.id = '{company_id}' and ( c.max_zone = -1 or c.max_zone > " \
-               "(select count(*) from zone where room_id in (select id from room where company_id = '{company_id}')) ) " \
+               "(select count(*) from zone where deleted = False and room_id in (select id from room where company_id = '{company_id}' and deleted = False) ) ) " \
                "union select max_zone as maxzone from company c where c.id = '{company_id}' " \
                # "union select 0 as maxzone order by maxzone"
 
