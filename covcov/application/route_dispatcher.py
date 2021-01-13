@@ -95,7 +95,7 @@ def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Data
     elif method.upper() == 'RESET_TABLES' :
       db.reset_tables()
     elif method.upper() == 'FILL_TABLES' :
-      cd.create_company( payload[tbl_name]["company_id"], payload[tbl_name]["company_name"], payload[tbl_name]["company_email"] )
+      cd.create_company( payload[tbl_name]["company_id"], payload[tbl_name]["company_name"], payload[tbl_name]["company_email"], payload[tbl_name]["url"], payload[tbl_name]["pfix"]  )
       vd.create_visit(payload[tbl_name]["company_id"])
     else :
       raise Exception(f"Unrecognized 'method' value '{method}' or table '{str(tbl_name)}'. Value should be one of [POST, PUT, DELETE, GET, CONNECT]")
