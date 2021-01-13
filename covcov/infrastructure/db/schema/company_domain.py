@@ -96,13 +96,14 @@ def handle_delete_flag(payload_attr:dict):
 # ZONE
 #======
 ''' result can be 1 or 2 values dataset; It interpretation follow the folowing priorities:
-    result == -1 => row exist and Max Zone not reached yet
-    result >   0 => Max Zone reached and its value is 'result'
-    # result ==  0 => Zone inexistent '''
-max_zone_sql = "select -1 as maxzone from company c where c.id = '{company_id}' and ( c.max_zone = -1 or c.max_zone > " \
-               "(select count(*) from zone where deleted = False and room_id in (select id from room where company_id = '{company_id}' and deleted = False) ) ) " \
-               "union select max_zone as maxzone from company c where c.id = '{company_id}' " \
-               # "union select 0 as maxzone order by maxzone"
+    dataset == 2 rows => Max Zone not reached yet
+    dataset == 1 row  => Max Zone reached and tentative to excced max_zone '''
+max_zone_sql = "select false as tentative_exceeding_max_zone, " \
+               "(select count(*) from zone where deleted = False and room_id in (select id from room where company_id = '{company_id}' and deleted = False)) as current_zone_count " \
+               " from company c where c.id = '{company_id}' and ( c.max_zone = -1 or c.max_zone > " \
+               "(select count(*) from zone where deleted = False and room_id in (select id from room where company_id = '{company_id}' and deleted = False)) - {p_is_row} ) " \
+               "union select true as tentative_exceeding_max_zone, max_zone as current_zone_count from company c where c.id = '{company_id}' " \
+               "order by tentative_exceeding_max_zone"
 
 class Zone(Base, BaseTable, SerializerMixin):
   __tablename__ = 'zone'
@@ -127,12 +128,17 @@ class Zone(Base, BaseTable, SerializerMixin):
 
 
   @classmethod
-  def check_exists(cls, db, id: str, company_id:str, table:DeclarativeMeta):
-    max_zone_list = db.native_select_rows([max_zone_sql.format(company_id=company_id)])[0]
-    if len(max_zone_list['maxzone']) == 2 :      # => max_zone not reached yet
-      return super().check_exists(db, id, company_id, table)
-    else : # len(max_zone_list) == 1 => max_zone reached
-      raise BusinessException( {"max_zone_reached": max_zone_list['maxzone'][0]} )
+  def check_exists(cls, db, payload: dict, company_id:str, table:DeclarativeMeta) -> (bool, bool, int): # (row_exists, tentative_exceeding_max_zone, current_zone_count)
+    row_exists = super().check_exists(db, payload, company_id, table)[0]
+    is_delete_zone = payload.get("deleted") == True
+    max_zone_list = db.native_select_rows([max_zone_sql.format(company_id=company_id, p_is_row= 1 if row_exists else 0)])[0]
+    if (len(max_zone_list["tentative_exceeding_max_zone"]) == 2) or is_delete_zone : # <-- => max_zone not reached yet
+      return row_exists, max_zone_list["tentative_exceeding_max_zone"][0], \
+             max_zone_list["current_zone_count"][0] -1 if is_delete_zone else max_zone_list["current_zone_count"][0] \
+             if row_exists else max_zone_list["current_zone_count"][0] + 1
+    else :  # <-- len(max_zone_list) == 1 => max_zone reached
+      raise BusinessException( {"row_exists": row_exists, "tentative_exceeding_max_zone":
+             max_zone_list["tentative_exceeding_max_zone"][0], "current_zone_count": max_zone_list["current_zone_count"][0] } )
 
 #-- "company sub": "caf13bd0-6a7d-4c7b-aa87-6b6f3833fe1e" | "...f" | "...g" --#  {pfix}
 def create_company(comp_id:str, comp_name:str, comp_email:str, url:str, pfix='X'):

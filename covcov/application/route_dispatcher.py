@@ -81,7 +81,7 @@ def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Data
         db.insert_value([payload[tbl_name]],[tbl_object])
         method_result = {"redirect":f"{select_company_url(payload[tbl_name]['company_id'], db)}"}
       else :
-        db.upsert_value([payload[tbl_name]],[tbl_object], auth_claims['sub'])
+        method_result = db.upsert_value([payload[tbl_name]],[tbl_object], auth_claims['sub'])
     elif method.upper() == 'GET' :
       method_result =  db.select_rows( [tbl_object(**payload[tbl_name])] , [tbl_object])
     elif (route == '/a_ccontact') or (route == '/c_ccontact') :
