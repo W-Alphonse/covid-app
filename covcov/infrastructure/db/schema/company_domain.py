@@ -10,6 +10,11 @@ from covcov.application.BusinessException import BusinessException
 from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.schema.base_domain import BaseTable
 
+sql_current_zone_count = "select count(*) as current_zone_count from zone where deleted = False and room_id in (select id from room where company_id = '{company_id}' and deleted = False)"
+def local_execute_after_select(db, payload_attr:dict, company_id:str) -> dict:
+  current_zone_count = db.native_select_rows([sql_current_zone_count.format(company_id=company_id)])[0]
+  payload_attr.update({"current_zone_count": current_zone_count["current_zone_count"][0]})
+  return payload_attr
 
 # ========
 # Company
@@ -46,11 +51,9 @@ class Company(Base, BaseTable, SerializerMixin):
 
   @classmethod
   def execute_after_select(cls, db, payload_attr:dict):
-    sql = "select count(*) as current_zone_count from zone where deleted = False and room_id in (select id from room where company_id = '{company_id}' and deleted = False)"
-    current_zone_count = db.native_select_rows([sql.format(company_id=payload_attr['id'])])[0]
-    payload_attr.update({"current_zone_count": current_zone_count["current_zone_count"][0]})
+    return local_execute_after_select(db, payload_attr, payload_attr['id'])
 
-def __repr__(self):
+  def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.name}, {self.address}, {self.zip_code}, {self.country_code})"
 
 #======
@@ -82,8 +85,15 @@ class Room(Base, BaseTable, SerializerMixin):
   @classmethod
   def execute_on_update(cls, session:Session, id:str, cloned_payload:dict):
     if 'deleted' in cloned_payload :
-      cloned_payload.pop('company_id')
+      company_id = cloned_payload.pop('company_id')
       session.execute( update(Zone).where(Zone.room_id == id).values(cloned_payload) )
+
+  @classmethod
+  def execute_after_update(cls, db, company_id:str, cloned_payload:dict):
+    if 'deleted' in cloned_payload :
+      return local_execute_after_select(db, cloned_payload, company_id)
+
+
 
   def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.description}, FK.company_id={self.company_id})"

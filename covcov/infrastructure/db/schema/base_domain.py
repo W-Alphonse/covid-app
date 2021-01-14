@@ -26,9 +26,13 @@ class BaseTable:
     pass
 
   @classmethod
+  def execute_after_update(cls, db, id: str, payload_attr:dict):
+    pass
+
+  @classmethod
   def execute_after_select(cls, db, payload_attr:dict):
     pass
 
   @classmethod
   def check_exists(cls, db, payload:dict, company_id:str, table:DeclarativeMeta) -> (bool, int): # row_exists, tentative_exceeding_max_zone, current_zone_count
-    return ( db.native_execute_sqls([f"select 1 from {table.__name__} where id = '{payload['id']}'" ])[0] != 0, None, -1)
+    return ( db.native_execute_sqls([f"select 1 from {table.__name__} where id = '{payload['id']}'" ])[0] != 0, False, None)
