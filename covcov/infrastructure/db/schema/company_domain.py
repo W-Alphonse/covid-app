@@ -44,8 +44,13 @@ class Company(Base, BaseTable, SerializerMixin):
   def enhance_payload_with_auth_token(cls, payload_attr:dict, auth_claims:dict):
     payload_attr.update({'email': auth_claims['email']})
 
+  @classmethod
+  def execute_after_select(cls, db, payload_attr:dict):
+    sql = "select count(*) as current_zone_count from zone where deleted = False and room_id in (select id from room where company_id = '{company_id}' and deleted = False)"
+    current_zone_count = db.native_select_rows([sql.format(company_id=payload_attr['id'])])[0]
+    payload_attr.update({"current_zone_count": current_zone_count["current_zone_count"][0]})
 
-  def __repr__(self):
+def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.name}, {self.address}, {self.zip_code}, {self.country_code})"
 
 #======

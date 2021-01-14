@@ -26,7 +26,7 @@ class BaseTable:
     pass
 
   @classmethod
-  def execute_on_update(cls, session:Session, id: str, payload_attr:dict):
+  def execute_after_select(cls, db, payload_attr:dict):
     pass
 
   @classmethod

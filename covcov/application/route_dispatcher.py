@@ -84,6 +84,7 @@ def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Data
         method_result = db.upsert_value([payload[tbl_name]],[tbl_object], auth_claims['sub'])
     elif method.upper() == 'GET' :
       method_result =  db.select_rows( [tbl_object(**payload[tbl_name])] , [tbl_object])
+      tbl_object.execute_after_select(db, method_result[0])
     elif (route == '/a_ccontact') or (route == '/c_ccontact') :
       if route == '/c_ccontact' :
         payload[tbl_name].update({'company_id': auth_claims['sub']})
