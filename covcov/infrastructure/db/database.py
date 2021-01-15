@@ -66,9 +66,10 @@ class Database :
         else :
             self.insert_value(payloads, tables)
     # TODO - Use a more generic attribute instead of using : payloads[0].get('company_id'),
-    ret_as_dict = tables[i].execute_after_update(self, payloads[0].get('company_id'), cloned_payload)
-    if (ret_as_dict is not None) and isinstance(ret_as_dict, dict) :
-      current_zone_count = ret_as_dict.get("current_zone_count")
+    if row_exists :
+      ret_as_dict = tables[i].execute_after_update(self, payloads[0].get('company_id'), cloned_payload)
+      if (ret_as_dict is not None) and isinstance(ret_as_dict, dict) :
+        current_zone_count = ret_as_dict.get("current_zone_count")
     #
     return  {"row_exists": row_exists} if current_zone_count is None \
       else  {"row_exists": row_exists, "tentative_exceeding_max_zone":tentative_exceeding_max_zone, "current_zone_count": current_zone_count }
