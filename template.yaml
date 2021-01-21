@@ -6,24 +6,30 @@ Description: >
   Sample SAM Template for test-2
 
 Parameters:
-  AppName:
-    Type: String
-    Description: Name of the application
-    Default: "xyz"
   UserPoolNameCompany:
     Type: String
-    Default: "covcov-company-1"
+    Default: "covcov-company"
+  UserPoolArnCompany:
+    Type: String
+    Default: "arn:aws:cognito-idp:eu-west-3:835479088552:userpool/eu-west-3_05HzIk4Qk"
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-#    Handler:
     Runtime: python3.8
     CodeUri: src/   
     Timeout: 180
     Layers:
       - !Ref CovcovLibsLayer
   Api:
+    EndpointConfiguration:
+      Type: REGIONAL
+    GatewayResponses:
+      UNAUTHORIZED:
+        StatusCode: 401
+        ResponseParameters:
+          Headers:
+            Access-Control-Allow-Origin: "'*'"
     Cors:
       AllowMethods: "'POST, GET'"
       AllowHeaders: "'*'"
@@ -35,11 +41,6 @@ Resources:
     Properties:
       # UserPoolName: covcov-company-1
       UserPoolName: !Sub ${UserPoolNameCompany}
-#      LambdaConfig:
-#        PreSignUp: "lambda_presignup"
-#        PostConfirmation: "lambda_postsignup_confirmation"
-
-
 
 #      Policies:
 #        PasswordPolicy:
@@ -82,8 +83,9 @@ Resources:
         Authorizers:
           CovcovCompanyAuthorizer:
             # Can also accept an array
-            # UserPoolArn: !GetAtt covcov-company.Arn 
-            UserPoolArn: 'arn:aws:cognito-idp:eu-west-3:835479088552:userpool/eu-west-3_05HzIk4Qk'
+#            UserPoolArn: !GetAtt CovcovCompanyCognito.Arn
+#            UserPoolArn: 'arn:aws:cognito-idp:eu-west-3:835479088552:userpool/eu-west-3_05HzIk4Qk'
+            UserPoolArn: !Sub ${UserPoolArnCompany}
             Identity: # OPTIONAL
               # OPTIONAL; Default: 'Authorization'
               Header: auth-id-token 
@@ -145,7 +147,7 @@ Resources:
   PreSignupFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: lambda_presignup_2.handle
+      Handler: lambda_presignup.handle
       Events:
         CovcovCompanyCognitoEvt:
           # https://forum.serverless.com/t/linking-lambda-function-to-an-exiting-user-pool/4688/3

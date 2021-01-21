@@ -1,5 +1,11 @@
 version = 0.1
+
 [default]
+
+[default.package]
+[default.package.parameters]
+s3_bucket = "covcov"
+
 [default.deploy]
 [default.deploy.parameters]
 stack_name = "test-2"
