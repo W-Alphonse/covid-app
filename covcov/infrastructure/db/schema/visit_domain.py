@@ -46,8 +46,8 @@ class Visit(Base, BaseTable, SerializerMixin):
   #
   visitor_id  = Column(Unicode(15))
   phone_number = Column(Unicode(20))
-  fname = Column(Unicode(20))
-  lname = Column(Unicode(20))
+  fname = Column(Unicode(30))
+  lname = Column(Unicode(30))
   visit_datetime = Column(DateTime, default=datetime.datetime.now, nullable=False)
 
   def __repr__(self):

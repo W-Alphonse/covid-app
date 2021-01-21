@@ -36,8 +36,8 @@ class Company(Base, BaseTable, SerializerMixin):
   contact_lname = Column(Unicode(20))
   url = Column(Unicode(128))
   arn_key = Column(Unicode(12))
-  offer = Column(Unicode(3), default='SEC', nullable=False)
-  max_zone = Column(Integer, default=30, nullable=False)
+  offer = Column(Unicode(10), default='STD', nullable=False)   # STD | PREM | PREM_P
+  max_zone = Column(Integer, default=20, nullable=False)
   deleted = Column(Boolean(), default=False, nullable=False)
   creation_dt    = Column(DateTime, default=datetime.datetime.now, nullable=False)
   activation_dt = Column(DateTime, default=datetime.datetime.now, nullable=False)
