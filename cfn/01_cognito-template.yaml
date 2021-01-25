@@ -1,41 +1,23 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
-
 Description: >
-  test-cognito
-
-  Sample SAM Template for test-cognito
-
+  covcov-cognito-DEV: Covcov Cognito stack for DEV
 Parameters:
+  ResourceLogicalName:
+    Type: String
+    Default: "covcov-company"
+  ResourceEnv:
+    Type: String
+    Default: "DEV"
   UserPoolNameCompany:
     Type: String
-    Default: "covcov-company-TEST"
-#  UserPoolArnCompany:
-#    Type: String
-#    Default: "arn:aws:cognito-idp:eu-west-3:835479088552:userpool/eu-west-3_05HzIk4Qk"
+    Default: "covcov-company-DEV"
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
-#Globals:
-#  Function:
-#    Runtime: python3.8
-#    CodeUri: src/
-#    Timeout: 180
-#    Layers:
-#      - !Ref CovcovLibsLayer
-#  Api:
-#    EndpointConfiguration:
-#      Type: REGIONAL
-#    GatewayResponses:
-#      UNAUTHORIZED:
-#        StatusCode: 401
-#        ResponseParameters:
-#          Headers:
-#            Access-Control-Allow-Origin: "'*'"
-#    Cors:
-#      AllowMethods: "'POST, GET'"
-#      AllowHeaders: "'*'"
-#      AllowOrigin: "'*'"
+#    Default: !Sub ${ResourceLogicalName}
+#    Default: !GetAtt "${AWS::StackName}"
+#  STACK_NAME="covcov-cognito-DEV"
+
 
 Resources:
   CovcovLog:
@@ -51,23 +33,21 @@ Resources:
         - email
       AutoVerifiedAttributes:
         - email
-#      UsernameAttributes:
-#        - email
+      # UsernameAttributes:
+      # - email
       UsernameConfiguration:
         CaseSensitive : False
       MfaConfiguration : "OFF"
-
       AccountRecoverySetting:
         RecoveryMechanisms:
           - Name: "verified_email"
             Priority: 1
-
       Schema:
         - Name: email
           Required: true
           Mutable: true
         - Name: etablissement
-          AttributeDataType: String
+          AttributeDataType: String # https://stackoverflow.com/questions/46302488/how-to-set-required-attributes-in-aws-cognito-user-pool-using-aws-cloudformation
           Mutable: true
           Required: false
           StringAttributeConstraints:
@@ -83,20 +63,49 @@ Resources:
           TemporaryPasswordValidityDays : 7
       AdminCreateUserConfig:
         AllowAdminCreateUserOnly: False
-
       VerificationMessageTemplate:
         DefaultEmailOption: "CONFIRM_WITH_LINK"
         EmailSubjectByLink: "Votre lien de validation Covcov"
         EmailMessageByLink: "Veuillez cliquer sur le lien ci-dessous pour vérifier votre adresse e-mail. {##Vérifier l'adresse e-mail##}"
 
+  CovcovClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CovcovCompanyCognito
+      # ClientName: !Sub ${AppName}-UserPoolClient
+      ClientName: covcov-app
+      GenerateSecret: false # set to false for web clients
+      PreventUserExistenceErrors: "ENABLED"
 
+      TokenValidityUnits:
+        AccessToken: "minutes"
+        IdToken: "minutes"
+        RefreshToken: "days"
+      RefreshTokenValidity: 1
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+
+#      SupportedIdentityProviders:
+#        - COGNITO
+#      CallbackURLs: !Ref ClientDomains
+#      LogoutURLs: !Ref ClientDomains
+#      AllowedOAuthFlowsUserPoolClient: true
+#      AllowedOAuthFlows:
+#        - code
+#        - implicit #for testing with postman
+#      AllowedOAuthScopes:
+#        - email
+#        - openid
+#        - profile
 
 Outputs:
   UserPoolId:
     Value: !Ref CovcovCompanyCognito
     Export:
       Name: "UserPool::Id"
-#  UserPoolClientId:
-#    Value: !Ref UserPoolClient
-#    Export:
-#      Name: "UserPoolClient::Id"
+    Description : "CovcovCompanyCognito - Pool Id"
+  AppClient:
+    Value: !Ref CovcovClient
+    Export:
+      Name: "UserPoolClient::Id"
+    Description : "CovcovClient - Client Id"

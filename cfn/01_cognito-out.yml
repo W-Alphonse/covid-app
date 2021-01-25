@@ -1,14 +1,18 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: 'test-cognito
-
-  Sample SAM Template for test-cognito
+Description: 'covcov-cognito-DEV: Covcov Cognito stack for DEV
 
   '
 Parameters:
+  ResourceLogicalName:
+    Type: String
+    Default: covcov-company
+  ResourceEnv:
+    Type: String
+    Default: DEV
   UserPoolNameCompany:
     Type: String
-    Default: covcov-company-TEST
+    Default: covcov-company-DEV
 Resources:
   CovcovLog:
     Type: AWS::Logs::LogGroup
@@ -56,9 +60,31 @@ Resources:
         EmailSubjectByLink: Votre lien de validation Covcov
         EmailMessageByLink: "Veuillez cliquer sur le lien ci-dessous pour v\xE9rifier\
           \ votre adresse e-mail. {##V\xE9rifier l'adresse e-mail##}"
+  CovcovClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId:
+        Ref: CovcovCompanyCognito
+      ClientName: covcov-app
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      RefreshTokenValidity: 1
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
 Outputs:
   UserPoolId:
     Value:
       Ref: CovcovCompanyCognito
     Export:
       Name: UserPool::Id
+    Description: CovcovCompanyCognito - Pool Id
+  AppClient:
+    Value:
+      Ref: CovcovClient
+    Export:
+      Name: UserPoolClient::Id
+    Description: CovcovClient - Client Id
