@@ -1,0 +1,17 @@
+version = 0.1
+
+[default]
+
+[default.package]
+[default.package.parameters]
+s3_bucket = "covcov"
+s3_prefix = "python"
+
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "test-2"
+s3_bucket = "covcov"
+s3_prefix = "template"
+region = "eu-west-3"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"

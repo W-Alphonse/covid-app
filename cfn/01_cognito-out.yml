@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'test-cognito
+
+  Sample SAM Template for test-cognito
+
+  '
+Parameters:
+  UserPoolNameCompany:
+    Type: String
+    Default: covcov-company-TEST
+Resources:
+  CovcovLog:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 7
+  CovcovCompanyCognito:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName:
+        Fn::Sub: ${UserPoolNameCompany}
+      AliasAttributes:
+      - email
+      AutoVerifiedAttributes:
+      - email
+      UsernameConfiguration:
+        CaseSensitive: false
+      MfaConfiguration: 'OFF'
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+        - Name: verified_email
+          Priority: 1
+      Schema:
+      - Name: email
+        Required: true
+        Mutable: true
+      - Name: etablissement
+        AttributeDataType: String
+        Mutable: true
+        Required: false
+        StringAttributeConstraints:
+          MaxLength: 30
+          MinLength: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+          RequireLowercase: true
+          TemporaryPasswordValidityDays: 7
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_LINK
+        EmailSubjectByLink: Votre lien de validation Covcov
+        EmailMessageByLink: "Veuillez cliquer sur le lien ci-dessous pour v\xE9rifier\
+          \ votre adresse e-mail. {##V\xE9rifier l'adresse e-mail##}"
+Outputs:
+  UserPoolId:
+    Value:
+      Ref: CovcovCompanyCognito
+    Export:
+      Name: UserPool::Id

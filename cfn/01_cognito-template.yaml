@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+
+Description: >
+  test-cognito
+
+  Sample SAM Template for test-cognito
+
+Parameters:
+  UserPoolNameCompany:
+    Type: String
+    Default: "covcov-company-TEST"
+#  UserPoolArnCompany:
+#    Type: String
+#    Default: "arn:aws:cognito-idp:eu-west-3:835479088552:userpool/eu-west-3_05HzIk4Qk"
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+#Globals:
+#  Function:
+#    Runtime: python3.8
+#    CodeUri: src/
+#    Timeout: 180
+#    Layers:
+#      - !Ref CovcovLibsLayer
+#  Api:
+#    EndpointConfiguration:
+#      Type: REGIONAL
+#    GatewayResponses:
+#      UNAUTHORIZED:
+#        StatusCode: 401
+#        ResponseParameters:
+#          Headers:
+#            Access-Control-Allow-Origin: "'*'"
+#    Cors:
+#      AllowMethods: "'POST, GET'"
+#      AllowHeaders: "'*'"
+#      AllowOrigin: "'*'"
+
+Resources:
+  CovcovLog:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 7
+
+  CovcovCompanyCognito:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${UserPoolNameCompany}
+      AliasAttributes :
+        - email
+      AutoVerifiedAttributes:
+        - email
+#      UsernameAttributes:
+#        - email
+      UsernameConfiguration:
+        CaseSensitive : False
+      MfaConfiguration : "OFF"
+
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: "verified_email"
+            Priority: 1
+
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+        - Name: etablissement
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+          StringAttributeConstraints:
+            MaxLength: 30
+            MinLength: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireNumbers : True
+          RequireSymbols : True
+          RequireUppercase : True
+          RequireLowercase : True
+          TemporaryPasswordValidityDays : 7
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: False
+
+      VerificationMessageTemplate:
+        DefaultEmailOption: "CONFIRM_WITH_LINK"
+        EmailSubjectByLink: "Votre lien de validation Covcov"
+        EmailMessageByLink: "Veuillez cliquer sur le lien ci-dessous pour vérifier votre adresse e-mail. {##Vérifier l'adresse e-mail##}"
+
+
+
+Outputs:
+  UserPoolId:
+    Value: !Ref CovcovCompanyCognito
+    Export:
+      Name: "UserPool::Id"
+#  UserPoolClientId:
+#    Value: !Ref UserPoolClient
+#    Export:
+#      Name: "UserPoolClient::Id"

@@ -1,0 +1,18 @@
+version = 0.1
+
+[default]
+
+[default.package]
+[default.package.parameters]
+s3_bucket = "covcov"
+
+
+
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "test-cognito"
+s3_bucket = "covcov"
+s3_prefix = "template-cognito"
+region = "eu-west-3"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM"

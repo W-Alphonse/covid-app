@@ -1,0 +1,163 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'test-2
+
+  Sample SAM Template for test-2
+
+  '
+Parameters:
+  UserPoolArnCompany:
+    Type: String
+    Default: arn:aws:cognito-idp:eu-west-3:835479088552:userpool/eu-west-3_05HzIk4Qk
+Globals:
+  Function:
+    Runtime: python3.8
+    CodeUri: src/
+    Timeout: 180
+    Layers:
+    - Ref: CovcovLibsLayer
+  Api:
+    EndpointConfiguration:
+      Type: REGIONAL
+    GatewayResponses:
+      UNAUTHORIZED:
+        StatusCode: 401
+        ResponseParameters:
+          Headers:
+            Access-Control-Allow-Origin: '''*'''
+    Cors:
+      AllowMethods: '''POST, GET'''
+      AllowHeaders: '''*'''
+      AllowOrigin: '''*'''
+Resources:
+  CovcovLog:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 7
+  CovcovCompanyCognito:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName:
+        Fn::Sub: ${UserPoolNameCompany}
+  CovcovLibsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Dependencies base layer for python apps
+      ContentUri: s3://covcov/python/793f3f5f855badd0adcb400a09ef6f79
+      LayerName: covcov-libs
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: python3.8
+  CovcovApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Auth:
+        Authorizers:
+          CovcovCompanyAuthorizer:
+            UserPoolArn:
+              Fn::Sub: ${UserPoolArnCompany}
+            Identity:
+              Header: auth-id-token
+  CompanyDomainFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_company_domain.handle
+      Events:
+        CovcovApi:
+          Type: Api
+          Properties:
+            Path: /company_domain
+            Method: post
+            RestApiId:
+              Ref: CovcovApi
+            Auth:
+              Authorizer: CovcovCompanyAuthorizer
+      CodeUri: s3://covcov/python/9589f5b9412711cd120d84e7872f3580
+  CompanyCasContactFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_cas_contact.handle
+      Events:
+        CovcovApi:
+          Type: Api
+          Properties:
+            Path: /c_ccontact
+            Method: post
+            RestApiId:
+              Ref: CovcovApi
+            Auth:
+              Authorizer: CovcovCompanyAuthorizer
+      CodeUri: s3://covcov/python/9589f5b9412711cd120d84e7872f3580
+  VisitDomainFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_visit_domain.handle
+      Events:
+        CovcovApi:
+          Type: Api
+          Properties:
+            Path: /visit_domain
+            Method: get
+            RestApiId:
+              Ref: CovcovApi
+      CodeUri: s3://covcov/python/9589f5b9412711cd120d84e7872f3580
+  PreSignupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_presignup.handle
+      Events:
+        CovcovCompanyCognitoEvt:
+          Type: Cognito
+          Properties:
+            UserPool:
+              Ref: CovcovCompanyCognito
+            Trigger: PreSignUp
+      CodeUri: s3://covcov/python/9589f5b9412711cd120d84e7872f3580
+  PostConfirmation:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_postsignup_confirmation.handle
+      Events:
+        CovcovCompanyCognitoEvt:
+          Type: Cognito
+          Properties:
+            UserPool:
+              Ref: CovcovCompanyCognito
+            Trigger: PostConfirmation
+      CodeUri: s3://covcov/python/9589f5b9412711cd120d84e7872f3580
+Outputs:
+  CovcovApi:
+    Description: API Gateway endpoint URL for Prod stage for CovcovApi functions
+    Value:
+      Fn::Sub: https://${CovcovApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/
+  CompanyDomainFunction:
+    Description: Company Domain Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - CompanyDomainFunction
+      - Arn
+  CompanyCasContactFunction:
+    Description: Company CasContact Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - CompanyCasContactFunction
+      - Arn
+  VisitDomainFunction:
+    Description: Visit Domain Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - VisitDomainFunction
+      - Arn
+  CompanyDomainFunctionIamRole:
+    Description: Implicit IAM Role created for CompanyDomainFunction
+    Value:
+      Fn::GetAtt:
+      - CompanyDomainFunctionRole
+      - Arn
+  VisitDomainFunctionIamRole:
+    Description: Implicit IAM Role created for CompanyDomainFunction
+    Value:
+      Fn::GetAtt:
+      - VisitDomainFunctionRole
+      - Arn
