@@ -1,23 +1,33 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: 'covcov-cognito-DEV: Covcov Cognito stack for DEV
+Description: 'Fn::Sub "${AWS::StackName}"
 
   '
 Parameters:
-  ResourceLogicalName:
-    Type: String
-    Default: covcov-company
-  ResourceEnv:
-    Type: String
-    Default: DEV
   UserPoolNameCompany:
     Type: String
-    Default: covcov-company-DEV
+    Default: Fn::Sub "${AWS::StackName}"
+Globals:
+  Function:
+    Runtime: python3.8
+    CodeUri: ../src/
+    Timeout: 180
+    Layers:
+    - Ref: CovcovLibsLayer
 Resources:
   CovcovLog:
     Type: AWS::Logs::LogGroup
     Properties:
       RetentionInDays: 7
+  CovcovLibsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Dependencies base layer for python apps
+      ContentUri: s3://covcov/77fbe1b55b7bf2ef8a0b2f7c7df8e30b
+      LayerName: covcov-libs
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: python3.8
   CovcovCompanyCognito:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -60,6 +70,15 @@ Resources:
         EmailSubjectByLink: Votre lien de validation Covcov
         EmailMessageByLink: "Veuillez cliquer sur le lien ci-dessous pour v\xE9rifier\
           \ votre adresse e-mail. {##V\xE9rifier l'adresse e-mail##}"
+      LambdaConfig:
+        PreSignUp:
+          Fn::GetAtt:
+          - PreSignupFunction
+          - Arn
+        PostConfirmation:
+          Fn::GetAtt:
+          - PostConfirmationFunction
+          - Arn
   CovcovClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
@@ -73,8 +92,18 @@ Resources:
         IdToken: minutes
         RefreshToken: days
       RefreshTokenValidity: 1
-      AccessTokenValidity: 60
+      AccessTokenValidity: 50
       IdTokenValidity: 60
+  PreSignupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_presignup.handle
+      CodeUri: s3://covcov/a4e9b1d2c565a74a4dc7ea0cd9d0ca54
+  PostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_postsignup_confirmation.handle
+      CodeUri: s3://covcov/a4e9b1d2c565a74a4dc7ea0cd9d0ca54
 Outputs:
   UserPoolId:
     Value:
@@ -82,7 +111,16 @@ Outputs:
     Export:
       Name: UserPool::Id
     Description: CovcovCompanyCognito - Pool Id
-  AppClient:
+  UserPoolArn:
+    Value:
+      Fn::GetAtt:
+      - CovcovCompanyCognito
+      - Arn
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-UserPoolArn
+    Description: CovcovCompanyCognito - Pool Arn
+  AppClientId:
     Value:
       Ref: CovcovClient
     Export:
