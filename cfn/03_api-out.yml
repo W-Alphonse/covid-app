@@ -1,15 +1,11 @@
-AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: 'Fn::Sub "${AWS::StackName}"
+Description: 'Stack: covcov-api-DEV
 
   '
 Parameters:
   CognitoStackName:
     Type: String
     Default: covcov-cognito-DEV
-  UserPoolArnCompany:
-    Type: String
-    Default: arn:aws:cognito-idp:eu-west-3:835479088552:userpool/eu-west-3_GviPgLIug
 Globals:
   Function:
     Runtime: python3.8
@@ -39,9 +35,11 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Properties:
       Description: Dependencies base layer for python apps
-      ContentUri: s3://covcov/python/77fbe1b55b7bf2ef8a0b2f7c7df8e30b
+      ContentUri: s3://covcov-dev/api/2c0d5223d8496c6b264b022f44183d2f
       LayerName: covcov-libs
-      RetentionPolicy: Delete
+      RetentionPolicy: Retain
+      CompatibleRuntimes:
+      - python3.8
     Metadata:
       BuildMethod: python3.8
   CovcovApi:
@@ -70,7 +68,7 @@ Resources:
               Ref: CovcovApi
             Auth:
               Authorizer: CovcovCompanyAuthorizer
-      CodeUri: s3://covcov/python/a4e9b1d2c565a74a4dc7ea0cd9d0ca54
+      CodeUri: s3://covcov-dev/api/8e74b97e88b9b03ced58d3a73a5da4e1
   CompanyCasContactFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -85,7 +83,7 @@ Resources:
               Ref: CovcovApi
             Auth:
               Authorizer: CovcovCompanyAuthorizer
-      CodeUri: s3://covcov/python/a4e9b1d2c565a74a4dc7ea0cd9d0ca54
+      CodeUri: s3://covcov-dev/api/8e74b97e88b9b03ced58d3a73a5da4e1
   VisitDomainFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -95,10 +93,15 @@ Resources:
           Type: Api
           Properties:
             Path: /visit_domain
-            Method: get
+            Method: post
             RestApiId:
               Ref: CovcovApi
-      CodeUri: s3://covcov/python/a4e9b1d2c565a74a4dc7ea0cd9d0ca54
+      CodeUri: s3://covcov-dev/api/8e74b97e88b9b03ced58d3a73a5da4e1
+  FakeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_fake.handle
+      CodeUri: s3://covcov-dev/api/7250e6882f9724bed256354789d08df0
 Outputs:
   CovcovApi:
     Description: API Gateway endpoint URL for Prod stage for CovcovApi functions

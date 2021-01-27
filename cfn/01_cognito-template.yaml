@@ -2,11 +2,11 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
 Description: >
-  Fn::Sub "${AWS::StackName}"
+  Stack: covcov-cognito-DEV
 Parameters:
   UserPoolNameCompany:
     Type: String
-    Default: Fn::Sub "${AWS::StackName}"
+    Default: "covcov-cognito-DEV"
 
 Globals:
   Function:
@@ -22,13 +22,34 @@ Resources:
     Properties:
       RetentionInDays: 7
 
+#  CovcovS3Bucket:
+#    Type: AWS::S3::Bucket
+#    Properties:
+#      # BucketName: Fn::Sub "${AWS::S3Bucket}"
+#      BucketName: "covcov-dev"
+#    # DeletionPolicy: Delete # retain
+#
+#  CovcovS3BucketPolicy:
+#    Type: AWS::S3::BucketPolicy
+#    Properties:
+#      Bucket:
+#        Ref: CovcovS3Bucket
+#      PolicyDocument:
+#        Statement:
+#          - Action: "s3:*"
+#            Resource: "arn:aws:s3:::${AWS::S3Bucket}"
+#            Effect: Allow
+#            Principal:
+#              Service: "cloudformation.amazonaws.com"
+
   CovcovLibsLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
       Description: Dependencies base layer for python apps
-      ContentUri: ../src-libs/
+#      ContentUri: ../src-libs/
+      ContentUri: ../src/
       LayerName: covcov-libs
-      RetentionPolicy: Delete # Retain
+      RetentionPolicy: Retain # Retain  Delete
     Metadata:
       BuildMethod: python3.8
 
@@ -110,6 +131,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_postsignup_confirmation.handle
+
 
 Outputs:
   UserPoolId:

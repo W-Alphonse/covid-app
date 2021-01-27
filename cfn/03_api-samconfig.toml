@@ -4,12 +4,12 @@ version = 0.1
 
 [default.package]
 [default.package.parameters]
-s3_bucket = "covcov"
-s3_prefix = "python"
+s3_bucket = "covcov-dev"
+s3_prefix = "api"
 
 [default.deploy]
 [default.deploy.parameters]
-s3_bucket = "covcov"
+s3_bucket = "covcov-dev"
 s3_prefix = "template-api"
 region = "eu-west-3"
 confirm_changeset = false

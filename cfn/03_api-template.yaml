@@ -1,7 +1,7 @@
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  Fn::Sub "${AWS::StackName}"
 
+Description: >
+  Stack: covcov-api-DEV
 Parameters:
   CognitoStackName:
     Type: String
@@ -35,15 +35,25 @@ Resources:
     Properties:
       RetentionInDays: 7
 
+  # https://bryson3gps.wordpress.com/2018/12/06/trick-sam-into-building-your-lambda-layers/
+  # https://github.com/aws/aws-sam-cli/pull/840
   CovcovLibsLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
       Description: Dependencies base layer for python apps
-      ContentUri: ../src-libs/
+#      ContentUri: ./libs/
+#      ContentUri: ../src/
+#      ContentUri: ./.aws-sam/build/CovcovLibsLayer/
+
+      ContentUri: ./.aws-sam/build/FakeFunction/
+#      ContentUri: ./.aws-sam/build/python/
       LayerName: covcov-libs
-      RetentionPolicy: Delete # Retain
+      RetentionPolicy: Retain # Retain  Delete
+      CompatibleRuntimes:
+        - python3.8
     Metadata:
       BuildMethod: python3.8
+
 
 
   CovcovApi:
@@ -59,7 +69,7 @@ Resources:
                 Fn::Sub: "${CognitoStackName}-UserPoolArn"
             Identity:
               Header: auth-id-token
-
+# Add role cloudwatchlog:   AmazonAPIGatewayPushToCloudWatchLogs / covcov-api-gateway-DEV-CloudWatchLog
   CompanyDomainFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -97,8 +107,16 @@ Resources:
           Type: Api
           Properties:
             Path: /visit_domain
-            Method: get
+            Method: post
             RestApiId: !Ref CovcovApi
+
+  FakeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_fake.handle
+      CodeUri: ../src/layers/fakepackage/
+
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function

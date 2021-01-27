@@ -1,12 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: 'Fn::Sub "${AWS::StackName}"
+Description: 'Stack: covcov-cognito-DEV
 
   '
 Parameters:
   UserPoolNameCompany:
     Type: String
-    Default: Fn::Sub "${AWS::StackName}"
+    Default: covcov-cognito-DEV
 Globals:
   Function:
     Runtime: python3.8
@@ -23,9 +23,9 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Properties:
       Description: Dependencies base layer for python apps
-      ContentUri: s3://covcov/77fbe1b55b7bf2ef8a0b2f7c7df8e30b
+      ContentUri: s3://covcov-dev/cognito/bce7fc4cf412518740a64783a827cb33
       LayerName: covcov-libs
-      RetentionPolicy: Delete
+      RetentionPolicy: Retain
     Metadata:
       BuildMethod: python3.8
   CovcovCompanyCognito:
@@ -98,20 +98,21 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_presignup.handle
-      CodeUri: s3://covcov/a4e9b1d2c565a74a4dc7ea0cd9d0ca54
+      CodeUri: s3://covcov-dev/cognito/bce7fc4cf412518740a64783a827cb33
   PostConfirmationFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_postsignup_confirmation.handle
-      CodeUri: s3://covcov/a4e9b1d2c565a74a4dc7ea0cd9d0ca54
+      CodeUri: s3://covcov-dev/cognito/bce7fc4cf412518740a64783a827cb33
 Outputs:
   UserPoolId:
+    Description: CovcovCompanyCognito - Pool Id
     Value:
       Ref: CovcovCompanyCognito
     Export:
       Name: UserPool::Id
-    Description: CovcovCompanyCognito - Pool Id
   UserPoolArn:
+    Description: CovcovCompanyCognito - Pool Arn
     Value:
       Fn::GetAtt:
       - CovcovCompanyCognito
@@ -119,10 +120,9 @@ Outputs:
     Export:
       Name:
         Fn::Sub: ${AWS::StackName}-UserPoolArn
-    Description: CovcovCompanyCognito - Pool Arn
   AppClientId:
+    Description: CovcovClient - Client Id
     Value:
       Ref: CovcovClient
     Export:
       Name: UserPoolClient::Id
-    Description: CovcovClient - Client Id
