@@ -15,6 +15,13 @@ Globals:
     Timeout: 180
     Layers:
       - !Ref CovcovLibsLayer
+    VpcConfig:
+      SecurityGroupIds:
+        - sg-07e556a0646210968
+      SubnetIds:
+        - subnet-08c8be7b7bc3d5b17
+        - subnet-02f8d18bfc7567152
+        - subnet-04221ccadea52a084
 
 Resources:
   CovcovLog:
@@ -42,17 +49,21 @@ Resources:
 #            Principal:
 #              Service: "cloudformation.amazonaws.com"
 
+  # https://bryson3gps.wordpress.com/2018/12/06/trick-sam-into-building-your-lambda-layers/
+  # https://github.com/aws/aws-sam-cli/pull/840
   CovcovLibsLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
       Description: Dependencies base layer for python apps
-#      ContentUri: ../src-libs/
-      ContentUri: ../src/
+      ContentUri: ./.aws-sam/build/FakeFunction/
       LayerName: covcov-libs
       RetentionPolicy: Retain # Retain  Delete
+      CompatibleRuntimes:
+        - python3.8
     Metadata:
       BuildMethod: python3.8
 
+  # General settings
   CovcovCompanyCognito:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -99,6 +110,7 @@ Resources:
         PreSignUp: !GetAtt PreSignupFunction.Arn
         PostConfirmation: !GetAtt PostConfirmationFunction.Arn
 
+  # App clients
   CovcovClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
@@ -114,6 +126,13 @@ Resources:
       RefreshTokenValidity: 1
       AccessTokenValidity: 50
       IdTokenValidity: 60
+
+  # App Integration
+  CovcovIntegration:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: "covcov-app-dev"
+      UserPoolId: !Ref CovcovCompanyCognito
 
   PreSignupFunction:
     Type: AWS::Serverless::Function
@@ -132,6 +151,11 @@ Resources:
     Properties:
       Handler: lambda_postsignup_confirmation.handle
 
+  FakeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_fake.handle
+      CodeUri: ../src/layers/fakepackage/
 
 Outputs:
   UserPoolId:

@@ -15,6 +15,13 @@ Globals:
     Timeout: 180
     Layers:
       - !Ref CovcovLibsLayer
+    VpcConfig:
+      SecurityGroupIds:
+        - sg-07e556a0646210968
+      SubnetIds:
+        - subnet-08c8be7b7bc3d5b17
+        - subnet-02f8d18bfc7567152
+        - subnet-04221ccadea52a084
   Api:
     EndpointConfiguration:
       Type: REGIONAL
@@ -28,6 +35,7 @@ Globals:
       AllowMethods: "'POST, GET'"
       AllowHeaders: "'*'"
       AllowOrigin: "'*'"
+    AccessLogSetting:
 
 Resources:
   CovcovLog:
@@ -41,20 +49,13 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Properties:
       Description: Dependencies base layer for python apps
-#      ContentUri: ./libs/
-#      ContentUri: ../src/
-#      ContentUri: ./.aws-sam/build/CovcovLibsLayer/
-
       ContentUri: ./.aws-sam/build/FakeFunction/
-#      ContentUri: ./.aws-sam/build/python/
       LayerName: covcov-libs
       RetentionPolicy: Retain # Retain  Delete
       CompatibleRuntimes:
         - python3.8
     Metadata:
       BuildMethod: python3.8
-
-
 
   CovcovApi:
     Type: AWS::Serverless::Api
@@ -70,6 +71,7 @@ Resources:
             Identity:
               Header: auth-id-token
 # Add role cloudwatchlog:   AmazonAPIGatewayPushToCloudWatchLogs / covcov-api-gateway-DEV-CloudWatchLog
+
   CompanyDomainFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -83,7 +85,7 @@ Resources:
             RestApiId: !Ref CovcovApi  # <-- Implicit API: !Ref ServerlessRestApi
             Auth:
               Authorizer: CovcovCompanyAuthorizer
-              
+
   CompanyCasContactFunction:
     Type: AWS::Serverless::Function
     Properties:

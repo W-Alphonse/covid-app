@@ -13,6 +13,13 @@ Globals:
     Timeout: 180
     Layers:
     - Ref: CovcovLibsLayer
+    VpcConfig:
+      SecurityGroupIds:
+      - sg-07e556a0646210968
+      SubnetIds:
+      - subnet-08c8be7b7bc3d5b17
+      - subnet-02f8d18bfc7567152
+      - subnet-04221ccadea52a084
   Api:
     EndpointConfiguration:
       Type: REGIONAL
@@ -26,6 +33,7 @@ Globals:
       AllowMethods: '''POST, GET'''
       AllowHeaders: '''*'''
       AllowOrigin: '''*'''
+    AccessLogSetting: null
 Resources:
   CovcovLog:
     Type: AWS::Logs::LogGroup
@@ -68,7 +76,7 @@ Resources:
               Ref: CovcovApi
             Auth:
               Authorizer: CovcovCompanyAuthorizer
-      CodeUri: s3://covcov-dev/api/8e74b97e88b9b03ced58d3a73a5da4e1
+      CodeUri: s3://covcov-dev/api/33876ff9ae809123ed867e022b39c344
   CompanyCasContactFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -83,7 +91,7 @@ Resources:
               Ref: CovcovApi
             Auth:
               Authorizer: CovcovCompanyAuthorizer
-      CodeUri: s3://covcov-dev/api/8e74b97e88b9b03ced58d3a73a5da4e1
+      CodeUri: s3://covcov-dev/api/33876ff9ae809123ed867e022b39c344
   VisitDomainFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -96,7 +104,7 @@ Resources:
             Method: post
             RestApiId:
               Ref: CovcovApi
-      CodeUri: s3://covcov-dev/api/8e74b97e88b9b03ced58d3a73a5da4e1
+      CodeUri: s3://covcov-dev/api/33876ff9ae809123ed867e022b39c344
   FakeFunction:
     Type: AWS::Serverless::Function
     Properties:

@@ -14,6 +14,13 @@ Globals:
     Timeout: 180
     Layers:
     - Ref: CovcovLibsLayer
+    VpcConfig:
+      SecurityGroupIds:
+      - sg-07e556a0646210968
+      SubnetIds:
+      - subnet-08c8be7b7bc3d5b17
+      - subnet-02f8d18bfc7567152
+      - subnet-04221ccadea52a084
 Resources:
   CovcovLog:
     Type: AWS::Logs::LogGroup
@@ -23,9 +30,11 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Properties:
       Description: Dependencies base layer for python apps
-      ContentUri: s3://covcov-dev/cognito/bce7fc4cf412518740a64783a827cb33
+      ContentUri: s3://covcov-dev/cognito/2c0d5223d8496c6b264b022f44183d2f
       LayerName: covcov-libs
       RetentionPolicy: Retain
+      CompatibleRuntimes:
+      - python3.8
     Metadata:
       BuildMethod: python3.8
   CovcovCompanyCognito:
@@ -94,16 +103,27 @@ Resources:
       RefreshTokenValidity: 1
       AccessTokenValidity: 50
       IdTokenValidity: 60
+  CovcovIntegration:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: covcov-app-dev
+      UserPoolId:
+        Ref: CovcovCompanyCognito
   PreSignupFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_presignup.handle
-      CodeUri: s3://covcov-dev/cognito/bce7fc4cf412518740a64783a827cb33
+      CodeUri: s3://covcov-dev/cognito/33876ff9ae809123ed867e022b39c344
   PostConfirmationFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_postsignup_confirmation.handle
-      CodeUri: s3://covcov-dev/cognito/bce7fc4cf412518740a64783a827cb33
+      CodeUri: s3://covcov-dev/cognito/33876ff9ae809123ed867e022b39c344
+  FakeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_fake.handle
+      CodeUri: s3://covcov-dev/cognito/7250e6882f9724bed256354789d08df0
 Outputs:
   UserPoolId:
     Description: CovcovCompanyCognito - Pool Id
