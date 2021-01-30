@@ -6,7 +6,7 @@ Description: 'Stack: covcov-cognito-DEV
 Parameters:
   UserPoolNameCompany:
     Type: String
-    Default: covcov-cognito-DEV
+    Default: "covcov-cognito--\xA4env\xA4"
 Globals:
   Function:
     Runtime: python3.8
@@ -16,11 +16,11 @@ Globals:
     - Ref: CovcovLibsLayer
     VpcConfig:
       SecurityGroupIds:
-      - sg-07e556a0646210968
+      - "sg-\xA4sg-id\xA4"
       SubnetIds:
-      - subnet-08c8be7b7bc3d5b17
-      - subnet-02f8d18bfc7567152
-      - subnet-04221ccadea52a084
+      - "subnet-\xA4subnet-id_1\xA4"
+      - "subnet-\xA4subnet-id_2\xA4"
+      - "subnet-\xA4subnet-id_3\xA4"
 Resources:
   CovcovLog:
     Type: AWS::Logs::LogGroup
@@ -113,12 +113,12 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_presignup.handle
-      CodeUri: s3://covcov-dev/cognito/33876ff9ae809123ed867e022b39c344
+      CodeUri: s3://covcov-dev/cognito/3c3b459580478a60a69d2a7a9265d972
   PostConfirmationFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_postsignup_confirmation.handle
-      CodeUri: s3://covcov-dev/cognito/33876ff9ae809123ed867e022b39c344
+      CodeUri: s3://covcov-dev/cognito/3c3b459580478a60a69d2a7a9265d972
   FakeFunction:
     Type: AWS::Serverless::Function
     Properties:

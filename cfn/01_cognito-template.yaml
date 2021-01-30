@@ -6,7 +6,7 @@ Description: >
 Parameters:
   UserPoolNameCompany:
     Type: String
-    Default: "covcov-cognito-DEV"
+    Default: "covcov-cognito-¤env¤"
 
 Globals:
   Function:
@@ -17,11 +17,11 @@ Globals:
       - !Ref CovcovLibsLayer
     VpcConfig:
       SecurityGroupIds:
-        - sg-07e556a0646210968
+        - sg-¤sg-id¤
       SubnetIds:
-        - subnet-08c8be7b7bc3d5b17
-        - subnet-02f8d18bfc7567152
-        - subnet-04221ccadea52a084
+        - subnet-¤subnet-id_1¤
+        - subnet-¤subnet-id_2¤
+        - subnet-¤subnet-id_3¤
 
 Resources:
   CovcovLog:
