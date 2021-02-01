@@ -1,0 +1,13 @@
+database:
+    connection_string: ¤DB_URL¤
+    echo: ¤DB_ECHO¤
+
+cognito:
+    COG_APP_CLIENT_ID   : ¤COG_APP_CLIENT_ID¤
+    COG_REGION          : eu-west-3
+    COG_USER_POOL_ID    : ¤COG_USER_POOL_ID¤
+
+logging:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level: ¤LOG_LEVEL¤
+
