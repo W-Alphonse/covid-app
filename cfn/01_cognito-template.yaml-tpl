@@ -1,0 +1,179 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  Stack: ¤stack-name¤-¤env¤
+Parameters:
+  UserPoolNameCompany:
+    Type: String
+    Default: "¤stack-name¤-¤env¤"
+
+Globals:
+  Function:
+    Runtime: python3.8
+    CodeUri: ¤relative-path-src¤/
+    Timeout: 180
+    Layers:
+      - !Ref CovcovLibsLayer
+    VpcConfig:
+      SecurityGroupIds:
+        - sg-¤sg-id¤
+      SubnetIds:
+        - subnet-¤subnet-id_1¤
+        - subnet-¤subnet-id_2¤
+        - subnet-¤subnet-id_3¤
+
+Resources:
+  CovcovLog:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 7
+
+#  CovcovS3Bucket:
+#    Type: AWS::S3::Bucket
+#    Properties:
+#      # BucketName: Fn::Sub "${AWS::S3Bucket}"
+#      BucketName: "¤stack-name¤-¤env¤-1"
+#    DeletionPolicy: Retain # Delete # retain
+
+#  CovcovS3BucketPolicy:
+#    Type: AWS::S3::BucketPolicy
+#    Properties:
+#      Bucket:
+#        Ref: !Ref CovcovS3Bucket
+#      PolicyDocument:
+#        Statement:
+#          - Action: "s3:*"
+#            Resource: "arn:aws:s3:::${AWS::S3Bucket}"
+#            Effect: Allow
+#            Principal:
+#              Service: "cloudformation.amazonaws.com"
+
+  # https://bryson3gps.wordpress.com/2018/12/06/trick-sam-into-building-your-lambda-layers/
+  # https://github.com/aws/aws-sam-cli/pull/840
+  CovcovLibsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Dependencies base layer for python apps
+      ContentUri: ./.aws-sam/build/FakeFunction/
+      LayerName: covcov-libs
+      RetentionPolicy: Retain # Retain  Delete
+      CompatibleRuntimes:
+        - python3.8
+    Metadata:
+      BuildMethod: python3.8
+
+  # General settings
+  CovcovCompanyCognito:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${UserPoolNameCompany}
+      AliasAttributes :
+        - email
+      AutoVerifiedAttributes:
+        - email
+      # UsernameAttributes:
+      # - email
+      UsernameConfiguration:
+        CaseSensitive : False
+      MfaConfiguration : "OFF"
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: "verified_email"
+            Priority: 1
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+        - Name: etablissement
+          AttributeDataType: String # https://stackoverflow.com/questions/46302488/how-to-set-required-attributes-in-aws-cognito-user-pool-using-aws-cloudformation
+          Mutable: true
+          Required: false
+          StringAttributeConstraints:
+            MaxLength: 30
+            MinLength: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireNumbers : True
+          RequireSymbols : True
+          RequireUppercase : True
+          RequireLowercase : True
+          TemporaryPasswordValidityDays : 7
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: False
+      VerificationMessageTemplate:
+        DefaultEmailOption: "CONFIRM_WITH_LINK"
+        EmailSubjectByLink: "Votre lien de validation Covcov"
+        EmailMessageByLink: "Veuillez cliquer sur le lien ci-dessous pour vérifier votre adresse e-mail. {##Vérifier l'adresse e-mail##}"
+      LambdaConfig:
+        PreSignUp: !GetAtt PreSignupFunction.Arn
+        PostConfirmation: !GetAtt PostConfirmationFunction.Arn
+
+  # App clients
+  CovcovClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CovcovCompanyCognito
+      ClientName: covcov-app
+      GenerateSecret: false # set to false for web clients
+      PreventUserExistenceErrors: "ENABLED"
+
+      TokenValidityUnits:
+        AccessToken: "minutes"
+        IdToken: "minutes"
+        RefreshToken: "days"
+      RefreshTokenValidity: 1
+      AccessTokenValidity: 50
+      IdTokenValidity: 60
+
+  # App Integration
+  CovcovIntegration:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      # Domain: "covcov-app"
+      Domain : "domain-¤stack-name¤-¤env¤"
+      UserPoolId: !Ref CovcovCompanyCognito
+
+  PreSignupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_presignup.handle
+#      Events:
+#        CovcovCompanyCognitoEvt:
+#          # https://forum.serverless.com/t/linking-lambda-function-to-an-exiting-user-pool/4688/3
+#          Type:  Cognito
+#          Properties:
+#            UserPool: !Ref CovcovCompanyCognito
+#            Trigger: PreSignUp
+
+  PostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_postsignup_confirmation.handle
+
+  FakeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_fake.handle
+#      CodeUri: ../src/layers/fakepackage/
+      CodeUri: ¤relative-path-src¤/layers/fakepackage/
+
+Outputs:
+  UserPoolId:
+    Description : "CovcovCompanyCognito - Pool Id"
+    Value: !Ref CovcovCompanyCognito
+    Export:
+      Name: "¤stack-name¤-¤env¤-UserPool::Id"
+      # Name: "UserPool::Id"
+  UserPoolArn:                              # <-- Logical ID
+    Description : "CovcovCompanyCognito - Pool Arn"
+    Value: !GetAtt CovcovCompanyCognito.Arn # <-- Value to return
+    Export:
+      Name: !Sub "${AWS::StackName}-UserPoolArn"  # <-- Value to export
+  AppClientId:
+    Description : "CovcovClient - Client Id"
+    Value: !Ref CovcovClient
+    Export:
+      Name: "¤stack-name¤-¤env¤-UserPoolClient::Id"
+      # Name: "UserPoolClient::Id"

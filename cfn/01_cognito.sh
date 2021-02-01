@@ -1,13 +1,9 @@
-
 export ARTIFACT_PFIX=01_cognito
-export STACK_NAME=covcov-cognito
-export ENV=$1
+export STACK_NAME=covcov-cognit
+export PRJ_NAME=covcov
+export TGET_ENV=$1
 
-echo ENV $ENV
+. sam-prepare-config.sh  $ARTIFACT_PFIX $TGET_ENV $PRJ_NAME
+. sam-execute-cmds.sh    $ARTIFACT_PFIX $TGET_ENV $STACK_NAME
 
-. sam-prepare-config.sh  $ARTIFACT_PFIX $ENV
-#. sam-execute-cmds.sh $ARTIFACT_PFIX $STACK_NAME-$ENV
-
-
-#. sam-execute-cmds.sh '01_cognito' 'covcov-cognito-DEV'
 
