@@ -35,7 +35,7 @@ Globals:
           Headers:
             Access-Control-Allow-Origin: "'*'"
     Cors:
-      AllowMethods: "'POST, GET'"
+      AllowMethods: "'POST, GET, OPTIONS'"
       AllowHeaders: "'*'"
       AllowOrigin: "'*'"
     AccessLogSetting:
@@ -52,7 +52,7 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Properties:
       Description: Dependencies base layer for python apps
-      ContentUri: ./.aws-sam/build/FakeFunction/
+      ContentUri: ./.aws-sam-¤stack-name¤/build/FakeFunction/
       LayerName: covcov-libs
       RetentionPolicy: Retain # Retain  Delete
       CompatibleRuntimes:

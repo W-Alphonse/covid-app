@@ -22,7 +22,13 @@ Globals:
         - subnet-¤subnet-id_1¤
         - subnet-¤subnet-id_2¤
         - subnet-¤subnet-id_3¤
-
+#    AssumeRolePolicyDocument:
+#      Version: 2012-10-17
+#      Statement:
+#        - Effect: Allow
+#          Principal:
+#            Service: cognito-idp.amazonaws.com
+#          Action: sts:AssumeRole
 Resources:
   CovcovLog:
     Type: AWS::Logs::LogGroup
@@ -55,7 +61,7 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Properties:
       Description: Dependencies base layer for python apps
-      ContentUri: ./.aws-sam/build/FakeFunction/
+      ContentUri: ./.aws-sam-¤stack-name¤/build/FakeFunction/
       LayerName: covcov-libs
       RetentionPolicy: Retain # Retain  Delete
       CompatibleRuntimes:
@@ -158,6 +164,22 @@ Resources:
       Handler: lambda_fake.handle
 #      CodeUri: ../src/layers/fakepackage/
       CodeUri: ¤relative-path-src¤/layers/fakepackage/
+
+  CognitoPreSignupInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PreSignupFunction.Arn  # !GetAtt MyLambdaFunctionName.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt CovcovCompanyCognito.Arn
+
+  CognitoPostConfirmationInvocationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt  PostConfirmationFunction.Arn  # !GetAtt MyLambdaFunctionName.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt CovcovCompanyCognito.Arn
 
 Outputs:
   UserPoolId:
