@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Unicode, ForeignKey, DateTime, Integer, Sequence, BigInteger
+from sqlalchemy import Column, Unicode, ForeignKey, DateTime, BigInteger
 from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy_serializer import SerializerMixin
 

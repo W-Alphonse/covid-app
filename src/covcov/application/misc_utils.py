@@ -19,13 +19,13 @@ def gen_room(description:str, auth_claim:dict, db: Database ) -> dict :
     room_id = make_id()
     room = {'id':room_id, 'description':f'{description}', 'company_id':f'{auth_claim["sub"]}'}
     body = { 'method' : 'POST', 'room': room }
-    route_dispatcher.dispatch(body, None, auth_claim , ROUTE, db)
+    route_dispatcher.dispatch(body, None, auth_claim, ROUTE, db)
     return room_id
 
 def gen_zone(room_id: str, description:str, auth_claim:dict, db: Database ) -> dict :
   zone = {'id':make_id(), 'description':f'{description}', 'room_id':f'{room_id}'}
   body = { 'method' : 'POST', 'zone': zone }
-  route_dispatcher.dispatch(body, None, auth_claim , ROUTE, db)
+  route_dispatcher.dispatch(body, None, auth_claim, ROUTE, db)
   return
 
 def populate_spaces(event, db) -> None:
@@ -44,7 +44,7 @@ def populate_user(event, db):
     body = { 'method' : 'POST',
              'company': {"name": f"{event['userName']}" ,
                          "type": f"{user_attrs['custom:etablissement']}" if bool(user_attrs.get('custom:etablissement')) else None } }
-    route_dispatcher.dispatch(body, None,  auth_claim, ROUTE, db)
+    route_dispatcher.dispatch(body, None, auth_claim, ROUTE, db)
 
 def should_create_user(event):
   user_attrs = event ['request']['userAttributes']

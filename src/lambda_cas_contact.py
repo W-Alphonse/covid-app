@@ -7,7 +7,7 @@ from covcov.infrastructure.cognito.idp_connexion import IdpConnexion
 
 logger = logging.getLogger(__name__)
 db = Database("database")
-#
+# fdfffmmpggggdddd
 region         = config["cognito"]["COG_REGION"]
 user_pool_id   = config["cognito"]["COG_USER_POOL_ID"]
 app_client_id  = config["cognito"]["COG_APP_CLIENT_ID"]
@@ -44,4 +44,4 @@ def handle(event, context):
     qry_params = event['queryStringParameters']
   else :
     body = event # --> Type(event) : <class 'dict'>
-  return route_dispatcher.dispatch(body, qry_params, cognito_idp.get_claims(event['headers']['auth-id-token'],'id'), event['resource'], db)
+  return route_dispatcher.dispatch(body, qry_params, cognito_idp.get_claims(event['headers']['auth-id-token'], 'id'), event['resource'], db)

@@ -4,7 +4,7 @@ import urllib.request
 import time
 import typing
 
-from jose import jwk, jwt
+from jose import jwt
 from jose.utils import base64url_decode
 
 '''

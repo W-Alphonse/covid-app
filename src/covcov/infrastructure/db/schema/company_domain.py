@@ -1,10 +1,10 @@
 import datetime
 
-from sqlalchemy import Column, Integer, Sequence, Unicode, String, ForeignKey, event, Boolean, and_, Date, DateTime, update
+from sqlalchemy import Column, Integer, Unicode, String, ForeignKey, Boolean, DateTime, update
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy_serializer import SerializerMixin
-from sqlalchemy_utils import EmailType, PhoneNumber, CountryType
+from sqlalchemy_utils import EmailType
 
 from covcov.application.BusinessException import BusinessException
 from covcov.infrastructure.db import Base

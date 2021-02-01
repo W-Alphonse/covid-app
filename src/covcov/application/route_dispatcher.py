@@ -59,7 +59,7 @@ def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Data
     # _sub = '¤ii4e4rv3s'
     # auth_claims = {'sub': _sub,  'email': _sub + '@gmail.com' }
     method = payload.pop('method') if bool(payload.get('method'))  else '' # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
-    tbl_name   = next(iter(payload))          # 1.a - type values : [company, room, zone, visit]
+    tbl_name   = next(iter(payload))                                       # 1.a - type values : [company, room, zone, visit]
     tbl_object = vd.Visit   if tbl_name == vd.Visit.__tablename__ else \
                  cd.Company if tbl_name == cd.Company.__tablename__ else \
                  cd.Room    if tbl_name == cd.Room.__tablename__ else \
