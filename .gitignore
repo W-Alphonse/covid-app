@@ -243,6 +243,10 @@ $RECYCLE.BIN/
 build/
 build_zipped/
 
+cfn/dev
+cfn/demo
+cfn/prod
+
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
 
 # Misc
