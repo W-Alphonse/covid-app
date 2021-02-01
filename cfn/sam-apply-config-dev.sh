@@ -14,6 +14,6 @@ s/¤relative-path-src¤/..\/..\/src/
 s/¤COG_APP_CLIENT_ID¤/2s8lcr08p3mb453ofcqvtde9r6/
 s/¤COG_USER_POOL_ID¤/eu-west-3_KbhRKJfVX/
 s/¤LOG_LEVEL¤/INFO/
-s/¤DB_URL¤/postgresql+psycopg2:\/\/haa:admin_123@postgres.cluster-cebppkk4kwe4.eu-west-3.rds.amazonaws.com:5432\/postgres?client_encoding=utf8/
+s/¤DB_URL¤/***/
 s/¤DB_ECHO¤/True/
 EOF
