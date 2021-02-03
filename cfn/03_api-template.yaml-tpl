@@ -1,6 +1,5 @@
 Transform: AWS::Serverless-2016-10-31
 
-  #  Default: "covcov-cognito-DEV"
 Description: >
   Stack: ¤stack-name¤-¤env¤
 Parameters:
@@ -24,7 +23,7 @@ Globals:
       SubnetIds:
         - subnet-¤subnet-id_1¤
         - subnet-¤subnet-id_2¤
-        - subnet-¤subnet-id_3¤
+        # - subnet-¤subnet-id_3¤
   Api:
     EndpointConfiguration:
       Type: REGIONAL
@@ -38,7 +37,9 @@ Globals:
       AllowMethods: "'POST, GET, OPTIONS'"
       AllowHeaders: "'*'"
       AllowOrigin: "'*'"
-    AccessLogSetting:
+    # AccessLogSetting:
+    # MethodSettings:
+
 
 Resources:
   CovcovLog:
@@ -59,6 +60,25 @@ Resources:
         - python3.8
     Metadata:
       BuildMethod: python3.8
+
+  ApiGwAccountConfig:
+    Type: "AWS::ApiGateway::Account"
+    Properties:
+      CloudWatchRoleArn: !GetAtt "ApiGatewayLoggingRole.Arn"
+  ApiGatewayLoggingRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "apigateway.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
 
   CovcovApi:
     Type: AWS::Serverless::Api

@@ -21,7 +21,7 @@ Globals:
       SubnetIds:
         - subnet-¤subnet-id_1¤
         - subnet-¤subnet-id_2¤
-        - subnet-¤subnet-id_3¤
+#        - subnet-¤subnet-id_3¤
 #    AssumeRolePolicyDocument:
 #      Version: 2012-10-17
 #      Statement:
@@ -137,8 +137,7 @@ Resources:
   CovcovIntegration:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
-      # Domain: "covcov-app"
-      Domain : "domain-¤stack-name¤-¤env¤"
+      Domain : "¤prj-name¤-¤env¤"
       UserPoolId: !Ref CovcovCompanyCognito
 
   PreSignupFunction:

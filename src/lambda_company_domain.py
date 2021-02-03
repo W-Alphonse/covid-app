@@ -7,7 +7,7 @@ from covcov.infrastructure.cognito.idp_connexion import IdpConnexion
 
 logger = logging.getLogger(__name__)
 db = Database("database")
-# #
+#
 region         = config["cognito"]["COG_REGION"]
 user_pool_id   = config["cognito"]["COG_USER_POOL_ID"]
 app_client_id  = config["cognito"]["COG_APP_CLIENT_ID"]
