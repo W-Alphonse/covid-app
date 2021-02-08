@@ -23,9 +23,9 @@ class Company(Base, BaseTable, SerializerMixin):
   __tablename__ = 'company'
   __table_args__ = {'extend_existing': True}
 
-  id = Column(Unicode(BaseTable.SUB_SIZE), primary_key=True)
-  name = Column(Unicode(30), unique=True, nullable=False)
-  type = Column(Unicode(10))
+  id = Column(Unicode(BaseTable.SUB_SIZE), primary_key=True) # cognito:sub
+  name = Column(Unicode(50), unique=True, nullable=False)    # custom:company_name
+  type = Column(Unicode(10))  # ENTRE / ADMIN / REST / ...   # custom:etablissement
   siret    = Column(Unicode(14))
   address  = Column(Unicode(300))
   zip_code = Column(Unicode(10))

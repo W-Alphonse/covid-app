@@ -21,8 +21,8 @@ def handle(event, context):
   if db.native_execute_sqls([f"select 1 from company where email = '{user_attrs ['email']}'" ])[0] != 0 :
     raise Exception(f": [Email '{user_attrs ['email']}' déjà utilisé. Merci d'en saisir un autre]")
 
-  event ['userName'] = urllib.parse.unquote_plus(event ['userName'])
-  if db.native_execute_sqls([f"select 1 from company where name = '{event ['userName']}'" ])[0] != 0 :
-    raise Exception(f": [Nom d'établissement '{event ['userName']}' déjà utilisé. Merci d'en saisir un autre]")
+  # event ['userName'] = urllib.parse.unquote_plus(event ['userName'])
+  # if db.native_execute_sqls([f"select 1 from company where name = '{event ['userName']}'" ])[0] != 0 :
+  #   raise Exception(f": [Nom d'établissement '{event ['userName']}' déjà utilisé. Merci d'en saisir un autre]")
 
   return event

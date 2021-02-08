@@ -42,7 +42,7 @@ def populate_user(event, db):
     user_attrs = event ['request']['userAttributes']
     auth_claim = {'sub': user_attrs ['sub'],  'email': user_attrs['email'] }
     body = { 'method' : 'POST',
-             'company': {"name": f"{event['userName']}" ,
+             'company': {"name": f"{user_attrs['custom:company_name']}" ,
                          "type": f"{user_attrs['custom:etablissement']}" if bool(user_attrs.get('custom:etablissement')) else None } }
     route_dispatcher.dispatch(body, None, auth_claim, ROUTE, db)
 
