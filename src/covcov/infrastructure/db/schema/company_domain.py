@@ -6,9 +6,11 @@ from sqlalchemy.orm import relationship, Session
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy_utils import EmailType
 
+from build.python.sqlalchemy import BLOB
 from covcov.application.BusinessException import BusinessException
 from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.schema.base_domain import BaseTable
+from covcov.infrastructure.kmscrypt import crypto
 
 sql_current_zone_count = "select count(*) as current_zone_count from zone where deleted = False and room_id in (select id from room where company_id = '{company_id}' and deleted = False)"
 def local_execute_after_select(db, payload_attr:dict, company_id:str) -> dict:
@@ -35,9 +37,11 @@ class Company(Base, BaseTable, SerializerMixin):
   contact_fname = Column(Unicode(20))
   contact_lname = Column(Unicode(20))
   url = Column(Unicode(128))
-  arn_key = Column(Unicode(12))
+  # arn_key = Column(Unicode(12))
+  encrypted_data_key = Column(BLOB)
+  iv  = Column(BLOB)
   offer = Column(Unicode(10), default='STD', nullable=False)   # STD | PREM | PREM_P
-  max_zone = Column(Integer, default=20, nullable=False)
+  max_zone = Column(Integer, default=10000, nullable=False)
   deleted = Column(Boolean(), default=False, nullable=False)
   creation_dt    = Column(DateTime, default=datetime.datetime.now, nullable=False)
   activation_dt = Column(DateTime, default=datetime.datetime.now, nullable=False)
@@ -52,6 +56,21 @@ class Company(Base, BaseTable, SerializerMixin):
   @classmethod
   def execute_after_select(cls, db, payload_attr:dict):
     return local_execute_after_select(db, payload_attr, payload_attr['id'])
+
+  @classmethod
+  def execute_before_insert(cls, payload_attr:dict, additionnal_ctx):
+    encrypted_data_key, iv = crypto.generate_data_key(additionnal_ctx.kms_clt, additionnal_ctx.kms_key_id, cls.get_encryption_context(payload_attr['id']) )
+    payload_attr['encrypted_data_key'] = encrypted_data_key
+    payload_attr['iv'] = iv
+
+  @classmethod
+  def get_encryption_context(cls, id:str) -> {}:
+    return {}
+    # return {'company' : id }
+
+  @classmethod
+  def get_serialize_rules(cls):
+    return  ('-encrypted_data_key', '-iv')
 
   def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.name}, {self.address}, {self.zip_code}, {self.country_code})"
@@ -79,7 +98,7 @@ class Room(Base, BaseTable, SerializerMixin):
     payload_attr.update({'company_id': auth_claims['sub']})
 
   @classmethod
-  def preprocess_before_upsert(cls, payload_attr:dict):
+  def execute_before_upsert(cls, payload_attr:dict):
     handle_delete_flag(payload_attr)
 
   @classmethod
@@ -92,8 +111,6 @@ class Room(Base, BaseTable, SerializerMixin):
   def execute_after_update(cls, db, company_id:str, cloned_payload:dict):
     if 'deleted' in cloned_payload :
       return local_execute_after_select(db, cloned_payload, company_id)
-
-
 
   def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.description}, FK.company_id={self.company_id})"
@@ -135,7 +152,7 @@ class Zone(Base, BaseTable, SerializerMixin):
   serialize_rules = ('-room',)
 
   @classmethod
-  def preprocess_before_upsert(cls, payload_attr:dict):
+  def execute_before_upsert(cls, payload_attr:dict):
     handle_delete_flag(payload_attr)
 
   def __repr__(self):

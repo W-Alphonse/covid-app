@@ -1,10 +1,13 @@
+import boto3
+
 from covcov.infrastructure.db.database import Database
 from covcov.application import misc_utils as util
 
 db = Database("database")
+kms_clt = boto3.client('kms')
 
 def handle(event, context):
-  util.create_user(event, db)
+  util.create_user(event, db, kms_clt)
   return event
 
 

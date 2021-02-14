@@ -1,5 +1,9 @@
 import json
 import logging
+
+import boto3
+
+from covcov.application.Ctx import Ctx
 from covcov.infrastructure.db.database import Database
 from covcov.application import route_dispatcher
 from covcov.infrastructure.configuration import config
@@ -7,6 +11,7 @@ from covcov.infrastructure.cognito.idp_connexion import IdpConnexion
 
 logger = logging.getLogger(__name__)
 db = Database("database")
+kms_clt = boto3.client('kms')
 #
 region         = config["cognito"]["COG_REGION"]
 user_pool_id   = config["cognito"]["COG_USER_POOL_ID"]
@@ -52,8 +57,7 @@ def handle(event, context) :
   #     print(f'HEADER -> key:{k} - type(value):{type(v)} - value:{v} ')
   # print(f'** event[headers] ** ->  type(value):{type(event["headers"])} - value:{str(event["headers"])} ')
 
-  ret = route_dispatcher.dispatch(body, qry_params, cognito_idp.get_claims(event['headers']['auth-id-token'], 'id'), event['resource'], db)
-  # ret = route_dispatcher.dispatch(body, qry_params, event['headers']['auth-id-token'], db, cognito_idp)
+  ret = route_dispatcher.dispatch(Ctx(body, qry_params, cognito_idp.get_claims(event['headers']['auth-id-token'], 'id'), event['resource'], db, kms_clt, config["kms"]["cmk_id"]))
   # print(f'** route_dispatcher.dispatch ({type(ret)}) ** : {str(ret)}')
   return ret
 

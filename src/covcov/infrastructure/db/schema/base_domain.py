@@ -18,7 +18,11 @@ class BaseTable:
     pass
 
   @classmethod
-  def preprocess_before_upsert(cls, payload_attr:dict):
+  def execute_before_upsert(cls, payload_attr:dict):
+    pass
+
+  @classmethod
+  def execute_before_insert(cls, payload_attr:dict, additionnal_ctx=None):
     pass
 
   @classmethod
@@ -32,6 +36,10 @@ class BaseTable:
   @classmethod
   def execute_after_select(cls, db, payload_attr:dict):
     pass
+
+  @classmethod
+  def get_serialize_rules(cls):
+    return ()
 
   @classmethod
   def check_exists(cls, db, payload:dict, company_id:str, table:DeclarativeMeta) -> (bool, int): # row_exists, tentative_exceeding_max_zone, current_zone_count

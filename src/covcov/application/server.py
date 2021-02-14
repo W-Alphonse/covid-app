@@ -1,8 +1,10 @@
 import datetime
 
+import boto3
 from flask import Flask, jsonify, request
 from flask_cors import cross_origin, CORS
 
+from covcov.application.Ctx import Ctx
 from covcov.infrastructure.configuration import config
 
 from covcov.application import route_dispatcher
@@ -20,18 +22,19 @@ CORS(app, supports_credentials=True)
 #app.config['CORS_HEADERS'] = 'Content-Type'
 
 db = Database("database")
+kms_clt = boto3.client('kms')
 region         = config["cognito"]["COG_REGION"]
 user_pool_id   = config["cognito"]["COG_USER_POOL_ID"]
 app_client_id  = config["cognito"]["COG_APP_CLIENT_ID"]
 cognito_idp = IdpConnexion(region, user_pool_id, app_client_id)
 #
-payload_as_lambda = True
+payload_as_lambda = False # True
 BODY    = "body"
 
 @app.route("/company_domain", methods=["POST"])
 @cross_origin(headers=['Content-Type'])
 def subscription_api():
-    return _process_result(route_dispatcher.dispatch(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'], 'id'), request.path, db))
+    return _process_result( route_dispatcher.dispatch(Ctx(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'], 'id'), request.path, db, kms_clt, config["kms"]["cmk_id"])) )
 
 def _process_result(result:dict) :
     return result[BODY]  if payload_as_lambda else jsonify(result)
@@ -39,18 +42,20 @@ def _process_result(result:dict) :
 @app.route("/visit_domain", methods=["POST"])
 @cross_origin(headers=['Content-Type'])
 def visit_api():
-    return _process_result(route_dispatcher.dispatch(request.get_json(), request.args, None, request.path, db))
+    # return _process_result(route_dispatcher.dispatch(request.get_json(), request.args, None, request.path, db))
+    return _process_result( route_dispatcher.dispatch(Ctx(request.get_json(), request.args, None, request.path, db, kms_clt, config["kms"]["cmk_id"])) )
 
 @app.route("/c_ccontact", methods=["POST"])
 @cross_origin(headers=['Content-Type'])
 def c_ccontact_api():
-    return _process_result(route_dispatcher.dispatch(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'], 'id'), request.path, db))
-    # return _process_result(route_dispatcher.dispatch(request.get_json(), request.args, {'sub':'82efcde5-84f1-403f-b6ad-0af5cd98a7c3'}, request.path, db))
+    # return _process_result(route_dispatcher.dispatch(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'], 'id'), request.path, db))
+    return _process_result( route_dispatcher.dispatch(Ctx(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'], 'id'), request.path, db, kms_clt, config["kms"]["cmk_id"])) )
 
 @app.route("/a_ccontact", methods=["POST"])
 @cross_origin(headers=['Content-Type'])
 def a_ccontact_api():
-    return _process_result(route_dispatcher.dispatch(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'], 'id'), request.path, db))
+    # return _process_result(route_dispatcher.dispatch(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'], 'id'), request.path, db))
+    return _process_result( route_dispatcher.dispatch(Ctx(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'], 'id'), request.path, db, kms_clt, config["kms"]["cmk_id"])) )
 
 @app.route("/example", methods=["POST"])
 def example():

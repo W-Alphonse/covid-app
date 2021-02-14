@@ -32,9 +32,10 @@ class Database :
     Base.metadata.drop_all(self.engine)
     Base.metadata.create_all(self.engine)
 
-  def insert_value(self, payloads:[typing.Union[dict, str]], tables:[DeclarativeMeta]):
+  def insert_value(self, payloads:[typing.Union[dict, str]], tables:[DeclarativeMeta], additionnal_ctx=None):
     with self.session_scope() as session:
       for i, payload in enumerate(payloads) :
+        tables[i].execute_before_insert(payload, additionnal_ctx)
         insert_stmt = insert(tables[i]).values(payload if isinstance(payload,dict) else json.loads(payload) )
         # logger.info(str(insert_stmt))
         session.execute(insert_stmt)
@@ -53,7 +54,7 @@ class Database :
         session.execute(do_upsert_stmt)
 
 
-  def upsert_value(self, payloads:[typing.Union[dict, str]], tables:[DeclarativeMeta], company_id:str):
+  def upsert_value(self, payloads:[typing.Union[dict, str]], tables:[DeclarativeMeta], company_id:str, additionnal_ctx=None):
     with self.session_scope() as session:
       for i, payload in enumerate(payloads) :
         # already_exist = session.query(literal(True)).filter(session.query(tables[i]).filter(tables[i].id == payload['id']).exists()).scalar()
@@ -64,7 +65,7 @@ class Database :
           session.execute( update(tables[i]).where(tables[i].id == id).values(cloned_payload) )
           tables[i].execute_on_update(session, id, cloned_payload)
         else :
-            self.insert_value(payloads, tables)
+            self.insert_value(payloads, tables, additionnal_ctx)
     # TODO - Use a more generic attribute instead of using : payloads[0].get('company_id'),
     if row_exists :
       ret_as_dict = tables[i].execute_after_update(self, payloads[0].get('company_id'), cloned_payload)
@@ -87,7 +88,7 @@ class Database :
     with self.session_scope() as session:
       for i, data in enumerate(datas) :
         for row in session.query(tables[i]).filter(tables[i].id == data.id).all() :
-          rows.append( self._remove_dict_keys( self._remove_dict_values(row.to_dict(), [None]) , columns_to_filter) )
+          rows.append( self._remove_dict_keys( self._remove_dict_values(row.to_dict(rules= data.get_serialize_rules()), [None]) , columns_to_filter) )
     return rows
 
   def native_execute_sqls(self, sql_queries:[str]) -> [int] :
@@ -184,7 +185,8 @@ class Database :
 
 if __name__ == '__main__':
   pass
-  # db = Database("database")
+  #  db = Database("database")
+  #  db.create_missing_tables()
   # **db.reset_tables()**
   # db.insert_value([dict({"id":"comp_1", "address":"24 Avenue Frayce", "zip_code":"93400"}),
   #                 dict({"id":"room_1.1", "description":"ROOM_1.1", "comp_id":"comp_1"}),

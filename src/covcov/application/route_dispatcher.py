@@ -5,6 +5,7 @@ import traceback
 import covcov.infrastructure.db.schema.company_domain as cd
 import covcov.infrastructure.db.schema.visit_domain as vd
 from covcov.application.BusinessException import BusinessException
+from covcov.application.Ctx import Ctx
 from covcov.infrastructure.db.database import Database
 
 logger = logging.getLogger(__name__)
@@ -54,50 +55,53 @@ def check_route_consistency(method : str, tablename:str, route:str) :
       return
 
 
-def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Database) -> dict:
+def dispatch(c: Ctx) -> dict:
   try :
     # _sub = '¤ii4e4rv3s'
     # auth_claims = {'sub': _sub,  'email': _sub + '@gmail.com' }
-    method = payload.pop('method') if bool(payload.get('method'))  else '' # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
-    tbl_name   = next(iter(payload))                                       # 1.a - type values : [company, room, zone, visit]
+    method = c.payload.pop('method') if bool(c.payload.get('method'))  else '' # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
+    tbl_name   = next(iter(c.payload))                                       # 1.a - type values : [company, room, zone, visit]
     tbl_object = vd.Visit   if tbl_name == vd.Visit.__tablename__ else \
                  cd.Company if tbl_name == cd.Company.__tablename__ else \
                  cd.Room    if tbl_name == cd.Room.__tablename__ else \
                  cd.Zone    if tbl_name == cd.Zone.__tablename__ else None
-    check_route_consistency(method, tbl_name, route)
-    if bool(qry_params):
-      payload[tbl_name].update(qry_params)  # 1.b - Add 'qry_params' to 'payload data'
-    if tbl_object == cd.Company :           # 1.c - Set the 'id' for "Company/Ars" by extracting 'sub' from the Authentication-token
+    check_route_consistency(method, tbl_name, c.route)
+    if bool(c.qry_params):
+      c.payload[tbl_name].update(c.qry_params)  # 1.b - Add 'qry_params' to 'payload data'
+    if tbl_object == cd.Company :               # 1.c - Set the 'id' for "Company/Ars" by extracting 'sub' from the Authentication-token
     # if (table == cd.Company) and ( payload[type].get('id') is None) : # <-- Over Flask, it allows to bypass Cognito by injecting the 'id' in the payload
-      payload[tbl_name].update({'id': auth_claims['sub']})
+      c.payload[tbl_name].update({'id': c.auth_claims['sub']})
     #
     # 2 - According to method type, decide how to route the Payload
     method_result="Success :-)"
     if method.upper() == 'POST' or method.upper() == 'PUT' :
-      tbl_object.enhance_payload_with_auth_token(payload[tbl_name], auth_claims)
-      tbl_object.check_business_rules_for_upsert(payload[tbl_name])
-      tbl_object.preprocess_before_upsert(payload[tbl_name])
+      tbl_object.enhance_payload_with_auth_token(c.payload[tbl_name], c.auth_claims)
+      tbl_object.check_business_rules_for_upsert(c.payload[tbl_name])
+      tbl_object.execute_before_upsert(c.payload[tbl_name])
       if tbl_object == vd.Visit :
-        db.insert_value([payload[tbl_name]],[tbl_object])
-        method_result = {"redirect":f"{select_company_url(payload[tbl_name]['company_id'], db)}"}
+        url, c.encrypted_data_key, c.iv = select_company_attributes(c.payload[tbl_name]['company_id'], c.db)
+        c.db.insert_value([c.payload[tbl_name]],[tbl_object], c)
+        method_result = {"redirect":f"{url}"}
       else :
-        method_result = db.upsert_value([payload[tbl_name]],[tbl_object], auth_claims['sub'])
+        method_result = c.db.upsert_value([c.payload[tbl_name]],[tbl_object], c.auth_claims['sub'], c)
     elif method.upper() == 'GET' :
-      method_result =  db.select_rows( [tbl_object(**payload[tbl_name])] , [tbl_object])
-      tbl_object.execute_after_select(db, method_result[0])
-    elif (route == '/a_ccontact') or (route == '/c_ccontact') :
-      if route == '/c_ccontact' :
-        payload[tbl_name].update({'company_id': auth_claims['sub']})
-      sql_stmts_kv = vd.Visit.compose_ccontact_sqls(payload[tbl_name])
-      result_list = db.native_select_rows(list(sql_stmts_kv.values()), 0)
-      method_result = vd.Visit.compose_ccontact_result(list(sql_stmts_kv.keys()), result_list)
+      method_result =  c.db.select_rows( [tbl_object(**c.payload[tbl_name])] , [tbl_object])
+      tbl_object.execute_after_select(c.db, method_result[0])
+    elif (c.route == '/a_ccontact') or (c.route == '/c_ccontact') :
+      if c.route == '/c_ccontact' :
+        c.payload[tbl_name].update({'company_id': c.auth_claims['sub']})
+        _, c.encrypted_data_key, c.iv = select_company_attributes(c.payload[tbl_name]['company_id'], c.db)
+      # TODO : Handle encrypted_data_key in case of multiple companies (e.g ARS)
+      sql_stmts_kv = vd.Visit.compose_ccontact_sqls(c.payload[tbl_name],c)
+      result_list = c.db.native_select_rows(list(sql_stmts_kv.values()), 0)
+      method_result = vd.Visit.compose_ccontact_result(list(sql_stmts_kv.keys()), result_list, c)
     elif method.upper() == 'DELETE' :
-      db.delete_rows([payload[tbl_name]],[tbl_object])
+      c.db.delete_rows([c.payload[tbl_name]],[tbl_object])
     elif method.upper() == 'RESET_TABLES' :
-      db.reset_tables()
+      c.db.reset_tables()
     elif method.upper() == 'FILL_TABLES' :
-      cd.create_company( payload[tbl_name]["company_id"], payload[tbl_name]["company_name"], payload[tbl_name]["company_email"], payload[tbl_name]["url"], payload[tbl_name]["pfix"]  )
-      vd.create_visit(payload[tbl_name]["company_id"])
+      cd.create_company( c.payload[tbl_name]["company_id"], c.payload[tbl_name]["company_name"], c.payload[tbl_name]["company_email"], c.payload[tbl_name]["url"], c.payload[tbl_name]["pfix"]  )
+      vd.create_visit(c.payload[tbl_name]["company_id"])
     else :
       raise Exception(f"Unrecognized 'method' value '{method}' or table '{str(tbl_name)}'. Value should be one of [POST, PUT, DELETE, GET, CONNECT]")
     return compose_success_response(method_result)
@@ -107,9 +111,12 @@ def dispatch(payload:dict, qry_params:dict, auth_claims:dict, route:str, db:Data
     return _compose_error_response(ex)
     # raise Exception(str(_compose_error_response(ex) ))
 
-def select_company_url(comp_id:str, db:Database) -> str :
-  result_as_dict = db.native_select_rows( [vd.Visit.select_company_url(comp_id)] ) [0]
-  return result_as_dict['url'][0]
+# bytes(value, 'utf-8')  bytes.fromhex()
+def select_company_attributes(comp_id:str, db:Database) -> (str, bytes, bytes) :
+  result_as_dict = db.native_select_rows( [vd.Visit.select_company_attributes(comp_id)] ) [0]
+  return result_as_dict['url'][0], \
+         bytes.fromhex(result_as_dict['encrypted_data_key'][0] ), \
+         bytes.fromhex(result_as_dict['iv'][0] )
 
 
 def _compose_error_response(ex: Exception) -> dict:

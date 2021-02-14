@@ -1,6 +1,7 @@
 import random
 
 from covcov.application import route_dispatcher
+from covcov.application.Ctx import Ctx
 from covcov.infrastructure.db.database import Database
 from covcov.application.templates import *
 from covcov.infrastructure.configuration import config
@@ -38,13 +39,13 @@ def populate_spaces(event, db) -> None:
         for zone in room['zones']:
             gen_zone(room_id, zone['zone'], auth_claim, db)
 
-def populate_user(event, db):
+def populate_user(event, db, kms_clt):
     user_attrs = event ['request']['userAttributes']
     auth_claim = {'sub': user_attrs ['sub'],  'email': user_attrs['email'] }
     body = { 'method' : 'POST',
              'company': {"name": f"{user_attrs['custom:company_name']}" ,
                          "type": f"{user_attrs['custom:etablissement']}" if bool(user_attrs.get('custom:etablissement')) else None } }
-    route_dispatcher.dispatch(body, None, auth_claim, ROUTE, db)
+    route_dispatcher.dispatch(Ctx(body, None, auth_claim , ROUTE, db, kms_clt, config["kms"]["cmk_id"]))
 
 def should_create_user(event):
   user_attrs = event ['request']['userAttributes']
@@ -53,9 +54,9 @@ def should_create_user(event):
   is_valid_user = user_attrs ['email_verified'] == 'true' and user_attrs['cognito:user_status'] == 'CONFIRMED'
   return is_valid_user_pool & is_valid_trigger & is_valid_user
 
-def create_user(event, db):
+def create_user(event, db, kms_clt):
   if should_create_user(event):
-    populate_user(event, db)
+    populate_user(event, db, kms_clt)
     populate_spaces(event, db)
 
 # if __name__ == '__main__':

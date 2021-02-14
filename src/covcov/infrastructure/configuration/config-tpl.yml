@@ -2,6 +2,10 @@ database:
     connection_string: ¤DB_URL¤
     echo: ¤DB_ECHO¤
 
+kms:
+    cmk_id: ¤cmk_id¤
+
+
 cognito:
     COG_APP_CLIENT_ID   : ¤COG_APP_CLIENT_ID¤
     COG_REGION          : eu-west-3
