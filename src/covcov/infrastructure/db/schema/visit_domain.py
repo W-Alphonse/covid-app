@@ -56,10 +56,10 @@ class Visit(Base, BaseTable, SerializerMixin):
   lname = Column(BLOB)
   visit_datetime = Column(DateTime, default=datetime.datetime.now, nullable=False)
   #
-  _visitor_id  = Column(Unicode(15))
-  _phone_number = Column(Unicode(20))
-  _fname = Column(Unicode(30))
-  _lname = Column(Unicode(30))
+  # _visitor_id  = Column(Unicode(15))
+  # _phone_number = Column(Unicode(20))
+  # _fname = Column(Unicode(30))
+  # _lname = Column(Unicode(30))
 
   def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.company.description}, {self.room.description}, {self.zone.description}, {self.visit_datetime})"
@@ -70,7 +70,6 @@ class Visit(Base, BaseTable, SerializerMixin):
 
   @classmethod
   def decrypt_result(cls, result_to_decrypt:dict, c) -> {} :
-    cipher = crypto.get_cipher(c.kms_clt, c.encrypted_data_key, c.iv, encryption_context={})
     result_to_decrypt['fname'] = cls.decrypt(result_to_decrypt, 'fname', c)
     result_to_decrypt['lname'] = cls.decrypt(result_to_decrypt, 'lname', c)
     result_to_decrypt['phone_number'] = cls.decrypt(result_to_decrypt, 'phone_number', c)

@@ -5,5 +5,9 @@ PyYAML==5.3.1
 ##aws-psycopg2==1.2.1
 psycopg2-binary==2.8.6
 python-jose==3.2.0
-aws-encryption-sdk==2.0.0
+boto3==1.17.3
+pycrypto==2.6.1
+#pycryptodome==3.10.1
+# build==0.2.1
+# aws-encryption-sdk==2.0.0
 #  pip install pycrypto

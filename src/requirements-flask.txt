@@ -6,6 +6,10 @@ psycopg2-binary==2.8.6
 Flask==1.1.2
 flask-cors==3.0.9
 python-jose==3.2.0
+boto3==1.17.3
+pycrypto==2.6.1
+#pycryptodome==3.10.1
+# build==0.2.1
 # pytz-2020.4
-aws-encryption-sdk==2.0.0
+# aws-encryption-sdk==2.0.0
 #  pip install pycrypto
