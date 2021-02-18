@@ -12,7 +12,8 @@ Globals:
   Function:
     Runtime: python3.8
     CodeUri: ¤relative-path-src¤/
-    Timeout: 180
+    Timeout: 900
+    KmsKeyArn : ¤cmk_id¤
     Layers:
       - !Ref CovcovLibsLayer
     VpcConfig:
@@ -168,7 +169,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_fake.handle
-#      CodeUri: ../src/layers/fakepackage/
+      # CodeUri: ../src/layers/fakepackage/
       CodeUri: ¤relative-path-src¤/layers/fakepackage/
 
   CognitoPreSignupInvocationPermission:

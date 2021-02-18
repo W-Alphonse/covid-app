@@ -3,8 +3,7 @@ import datetime
 from sqlalchemy import Column, Unicode, ForeignKey, DateTime, BigInteger
 from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy_serializer import SerializerMixin
-
-from build.python.sqlalchemy import BLOB
+from sqlalchemy import BLOB
 
 from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.schema import company_domain

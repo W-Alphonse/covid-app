@@ -13,6 +13,7 @@ AES_KEY_SPEC = 'AES_256'
 AES_MODE = AES.MODE_CBC
 
 
+
 def generate_data_key(kms_clt: BaseClient, key_id: str, encryption_context={}) -> (bytes, bytes) :
     res = kms_clt.generate_data_key(KeyId=key_id, KeySpec=AES_KEY_SPEC, EncryptionContext=encryption_context)
     iv = Random.new().read(16)        # To get a cryptographically secure random byte string, use GenerateRandom

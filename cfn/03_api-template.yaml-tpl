@@ -14,7 +14,8 @@ Globals:
     Runtime: python3.8
     # CodeUri: ../src/
     CodeUri: ¤relative-path-src¤/
-    Timeout: 180
+    Timeout: 900
+    KmsKeyArn : ¤cmk_id¤
     Layers:
       - !Ref CovcovLibsLayer
     VpcConfig:
@@ -37,7 +38,7 @@ Globals:
       AllowMethods: "'POST, GET, OPTIONS'"
       AllowHeaders: "'*'"
       AllowOrigin: "'*'"
-    # AccessLogSetting:
+    # AccessLogSetting:  # Permet d'affiner la configuration de la LOG
     # MethodSettings:
 
 

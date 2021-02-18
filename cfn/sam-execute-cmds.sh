@@ -6,7 +6,7 @@ echo " "
 # 1 - Sam build
 cd $TGET_ENV
 rm -r .aws-sam-$STACK_NAME
-sam build -b .aws-sam-$STACK_NAME/build  -t $ARTIFACT_PFIX-template.yaml --config-file $ARTIFACT_PFIX-samconfig.toml
+sam build -u -b .aws-sam-$STACK_NAME/build  -t $ARTIFACT_PFIX-template.yaml --config-file $ARTIFACT_PFIX-samconfig.toml
 
 # 2 - Build the layer : https://bryson3gps.wordpress.com/2018/12/06/trick-sam-into-building-your-lambda-layers/
 mkdir -p .aws-sam-$STACK_NAME/build/FakeFunction_/python

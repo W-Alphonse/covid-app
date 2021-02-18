@@ -1,9 +1,6 @@
 import logging
-import urllib
 
 from covcov.infrastructure.db.database import Database
-from covcov.application import route_dispatcher
-from covcov.application import misc_utils as util
 from covcov.infrastructure.configuration import config
 
 logger = logging.getLogger(__name__)

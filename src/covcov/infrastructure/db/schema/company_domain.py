@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship, Session
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy_utils import EmailType
 
-from build.python.sqlalchemy import BLOB
+from sqlalchemy import BLOB
 from covcov.application.BusinessException import BusinessException
 from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.schema.base_domain import BaseTable

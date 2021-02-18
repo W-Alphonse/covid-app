@@ -1,21 +1,51 @@
 # CONNEXION_STRING = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}?client_encoding=utf8&connect_timeout=10"
 # CONNEXION_STRING = "sqlite+pysqlite:////home/haa/pydev/aws-lambda/covid-app/db/covcov.db"
 # CONNEXION_STRING = "sqlite:///:memory:"
-#connection_string : postgresql+psycopg2://haa:haa@127.0.0.1:5432/postgres?client_encoding=utf8
+# connection_string : postgresql+psycopg2://haa:haa@127.0.0.1:5432/postgres?client_encoding=utf8
+# Encore
+
+kms:
+    cmk_id: arn:aws:kms:eu-west-3:030307376673:key/a52945d5-81ce-4cb8-899b-c05f88da4285
 
 database:
-#    connection_string : postgresql+psycopg2://haa:haa@127.0.0.1:5432/postgres?client_encoding=utf8
-    connection_string : postgresql+psycopg2://haa:admin_123@covcovpostgresinstance.csfmhvbte7v3.eu-west-3.rds.amazonaws.com:5432/postgres?client_encoding=utf8
+    # 1 - Postgres local
+    connection_string : postgresql+psycopg2://haa:haa@127.0.0.1:5432/postgres?client_encoding=utf8
+    # 2 - Postgres on wharouny.tp / used on today PROD
+    #    connection_string: postgresql+psycopg2://haa:admin_123@covcovpostgresinstance.csfmhvbte7v3.eu-west-3.rds.amazonaws.com:5432/postgres?client_encoding=utf8
+    # 3 - Aurora Serverless on wharouny
+    #    connection_string: postgresql+psycopg2://haa:admin_123@postgres.cluster-cebppkk4kwe4.eu-west-3.rds.amazonaws.com:5432/postgres?client_encoding=utf8
+    # 4 - Aurora Instance on on wharouny.tp
+    #    connection_string: postgresql+psycopg2://haa:Admin_123@covcov-aurora-prov-instance-1.csfmhvbte7v3.eu-west-3.rds.amazonaws.com:5432/covcov?client_encoding=utf8
     echo: True
 
-database_contact:
+database_contact_bis:
     connection_string : postgresql+psycopg2://haa:haa@127.0.0.1:5432/postgres?client_encoding=utf8
     echo: True
 
+# cog-prod
 cognito:
-    COG_APP_CLIENT_ID   : 16o0810kpvch0co3n52d8vk7v5
+    COG_APP_CLIENT_ID   : 25nu3toalhqp7gjeb7msc6m9u8
     COG_REGION          : eu-west-3
-    COG_USER_POOL_ID    : eu-west-3_bAiEm44uF
+    COG_USER_POOL_ID    : eu-west-3_fVbu36x6I
+
+# cog-dev
+#cognito:
+#    COG_APP_CLIENT_ID   : 6td9c7nhclpvvav057544go5u6
+#    COG_REGION          : eu-west-3
+#    COG_USER_POOL_ID    : eu-west-3_asaRuXKE9
+
+
+
+#aws:
+#    env : Stage
+#    region : eu-west-3
+#    account_id : f7kw21kg8f
+#    cog_app_client_name: covcov-company-app
+#    post_signup_url: https://app.covcov.io
+
+# YHO - covcovUsers   : arn:aws:cognito-idp:eu-west-3:477780155390:userpool/eu-west-3_bAiEm44uF
+# YHO - covcovCompany : arn:aws:cognito-idp:eu-west-3:477780155390:userpool/eu-west-3_Db1d3cPZJ
+# HAA - covcov-company: arn:aws:cognito-idp:eu-west-3:835479088552:userpool/eu-west-3_05HzIk4Qk
 
 logging:
     format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
