@@ -1,10 +1,11 @@
 import boto3
+from botocore.config import Config
 
 from covcov.infrastructure.db.database import Database
 from covcov.application import misc_utils as util
 
 db = Database("database")
-kms_clt = boto3.client('kms')
+kms_clt = boto3.client('kms', config=Config(connect_timeout=10, read_timeout=10, retries={'max_attempts': 3}))
 
 def handle(event, context):
   util.create_user(event, db, kms_clt)

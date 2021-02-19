@@ -16,13 +16,15 @@ raw_select     = "SELECT (select c.name FROM company c where c.id=v2.company_id)
                  "(select z.description FROM zone z where z.id=v2.zone_id) as zone, " \
                  "to_char(v2.visit_datetime,'YYYY-MM-DD HH24:MI:SS') as visit_datetime, v2.fname, v2.lname, v2.phone_number, v2.visitor_id {}"
 summary_select = "SELECT count(distinct(v2.phone_number)) as nb_cases, count(distinct(v2.zone_id)) as nb_zones, (max(v2.visit_datetime)::date - min(v2.visit_datetime)::date) as nb_days {}"
+contact_select_for_short_report = "SELECT v2.fname, v2.lname, v2.phone_number, v2.visitor_id {}"
 contact_select = "SELECT v2.fname, v2.lname, v2.phone_number, v2.visitor_id, " \
                  "(SELECT count(1) {} and vv2.zone_id = vv1.zone_id and vv2.phone_number = v2.phone_number ) as nb_contacts, "\
                  "count(distinct(v2.zone_id)) as nb_zones, to_char(min(v2.visit_datetime),'YYYY-MM-DD HH24:MI:SS') as min_date, to_char(max(v2.visit_datetime),'YYYY-MM-DD HH24:MI:SS') as max_date {}"
 exists_select  = "SELECT exists (SELECT 1 FROM visit as v1 where {})"
 #
 main_qry = "FROM visit as {}1 inner join public.visit as {}2 on {}1.zone_id = {}2.zone_id where {}"
-group_by = " GROUP BY v2.phone_number, v2.visitor_id, v2.fname, v2.lname ORDER BY nb_contacts desc"
+group_by_for_short_report = " GROUP BY v2.phone_number, v2.visitor_id, v2.fname, v2.lname"
+group_by = group_by_for_short_report + " ORDER BY nb_contacts desc"
 #
 criteria_phone   = "({}1.phone_number = {} and {}2.phone_number <> {})"
 criteria_visitor = "({}1.visitor_id = {} and {}2.visitor_id <> {})"
@@ -115,7 +117,8 @@ class Visit(Base, BaseTable, SerializerMixin):
     if not c.is_short_report() :
       sqls[cls.RAW_DATA] = raw_select.format(qry_from)
       sqls[cls.SUMMARY]  = summary_select.format(qry_from)
-    sqls[cls.CONTACTS] = contact_select.format(inner_qry_from, qry_from) + group_by
+    sqls[cls.CONTACTS] =  contact_select_for_short_report.format(qry_from)  + group_by_for_short_report \
+                          if c.is_short_report() else contact_select.format(inner_qry_from, qry_from) + group_by
     sqls[cls.EXISTS]   = cls._compose_criteria_exists(criteria, 'v')
     return sqls
 
