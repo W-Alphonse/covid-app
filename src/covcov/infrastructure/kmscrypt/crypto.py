@@ -16,6 +16,10 @@ AES_MODE = AES.MODE_CBC
 
 def generate_data_key(kms_clt: BaseClient, key_id: str, encryption_context={}) -> (bytes, bytes) :
     res = kms_clt.generate_data_key(KeyId=key_id, KeySpec=AES_KEY_SPEC, EncryptionContext=encryption_context)
+    ''' import base64
+    import binascii
+    print( binascii.hexlify(res['CiphertextBlob']))
+    print( binascii.hexlify(res['Plaintext'])) '''
     iv = Random.new().read(16)        # To get a cryptographically secure random byte string, use GenerateRandom
     return res['CiphertextBlob'] , iv # kmshelpers.hexlify(iv) # returns 'bytes' that can be stored in a Blob
 
