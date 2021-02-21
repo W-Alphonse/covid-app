@@ -12,10 +12,9 @@ Parameters:
 Globals:
   Function:
     Runtime: python3.8
-    # CodeUri: ../src/
     CodeUri: ¤relative-path-src¤/
     Timeout: 900
-    KmsKeyArn : ¤cmk_id¤
+    # KmsKeyArn : ¤cmk_id¤ # KMS utilisée par Lambda pour chiffrer et déchiffrer les variables d'environnement de votre fonction
     Layers:
       - !Ref CovcovLibsLayer
     VpcConfig:
@@ -143,6 +142,69 @@ Resources:
       # CodeUri: ../src/layers/fakepackage/
       CodeUri: ¤relative-path-src¤/layers/fakepackage/
 
+  covcovSymKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: Covcvo symmetric CMK
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: covcov-sym-key-¤env¤-policy
+        Statement:
+        - Sid: Enable IAM User Permissions
+          Effect: Allow
+          Principal:
+            AWS: arn:aws:iam::030307376673:root
+          Action: kms:*
+          Resource: '*'
+        - Sid: Allow administration of the key
+          Effect: Allow
+          Principal:
+            AWS:
+            # - !Sub arn:aws:iam::${AWS::AccountId}:user/${KeyAdmin}
+            - arn:aws:iam::030307376673:user/Administrator
+            - arn:aws:iam::030307376673:user/alphonse
+          Action:
+          - kms:Create*
+          - kms:Describe*
+          - kms:Enable*
+          - kms:List*
+          - kms:Put*
+          - kms:Update*
+          - kms:Revoke*
+          - kms:Disable*
+          - kms:Get*
+          - kms:Delete*
+          - kms:ScheduleKeyDeletion
+          - kms:CancelKeyDeletion
+          Resource: '*'
+        - Sid: Allow use of the key
+          Effect: Allow
+          Principal:
+            AWS:
+            - arn:aws:iam::030307376673:role/¤cognito-stack-name¤-¤env¤-PostConfirmationFunctionRole-¤PostConfirmationFunctionRoleId¤
+            - arn:aws:iam::030307376673:role/¤stack-name¤-¤env¤-CompanyDomainFunctionRole-¤CompanyDomainFunctionRoleId¤
+            - arn:aws:iam::030307376673:role/¤stack-name¤-¤env¤-VisitDomainFunctionRole-¤VisitDomainFunctionRoleId¤
+            - arn:aws:iam::030307376673:role/¤stack-name¤-¤env¤-CompanyCasContactFunctionRole-¤CompanyCasContactFunctionRoleId¤
+          Action:
+          - kms:DescribeKey
+          - kms:Encrypt
+          - kms:Decrypt
+          - kms:ReEncrypt*
+          - kms:GenerateDataKey
+          - kms:GenerateDataKeyWithoutPlaintext
+          Resource: '*'
+
+  covcovSymKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/covcov-kms-¤env¤
+      TargetKeyId: !GetAtt covcovSymKey.Arn
+
+# ParameterStoreApiCredentialsEncryptionKeyAlias:
+#   Type: AWS::KMS::Alias
+#   Properties:
+#     AliasName: !Sub alias/batch-sqs-queue-process-encryptkey-${CompanyParameter}
+#     TargetKeyId: !GetAtt ParameterStoreApiCredentialsEncryptionKey.Arn
 
 
 Outputs:

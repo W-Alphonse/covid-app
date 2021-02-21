@@ -13,7 +13,7 @@ Globals:
     Runtime: python3.8
     CodeUri: ¤relative-path-src¤/
     Timeout: 900
-    KmsKeyArn : ¤cmk_id¤
+    # KmsKeyArn : ¤cmk_id¤ # KMS utilisée par Lambda pour chiffrer et déchiffrer les variables d'environnement de votre fonction
     Layers:
       - !Ref CovcovLibsLayer
     VpcConfig:
