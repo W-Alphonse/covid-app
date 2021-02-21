@@ -24,6 +24,12 @@ def local_execute_after_select(db, payload_attr:dict, company_id:str) -> dict:
 class Company(Base, BaseTable, SerializerMixin):
   __tablename__ = 'company'
   __table_args__ = {'extend_existing': True}
+  OFFER_DISCOV  = 'DISCOV'
+  OFFER_STD     = 'STD'
+  OFFER_PREM    = 'PREM'
+  OFFER_PREM_PUS = 'PREM_P'
+  #
+  VISIT_PM_DISCOV = 3000
 
   id = Column(Unicode(BaseTable.SUB_SIZE), primary_key=True) # cognito:sub
   name = Column(Unicode(50), nullable=False)                 # custom:company_name
@@ -37,11 +43,15 @@ class Company(Base, BaseTable, SerializerMixin):
   contact_fname = Column(Unicode(20))
   contact_lname = Column(Unicode(20))
   url = Column(Unicode(128))
-  # arn_key = Column(Unicode(12))
   encrypted_data_key = Column(BLOB)
   iv  = Column(BLOB)
-  offer = Column(Unicode(10), default='STD', nullable=False)   # STD | PREM | PREM_P
+  #
+  offer = Column(Unicode(10), default=OFFER_DISCOV, nullable=False)   # DISCOV | STD | PREM | PREM_P
+  contractual_visit_per_month = Column(Integer, default=VISIT_PM_DISCOV, nullable=False)
+  cumulative_visit_per_month = Column(Integer, default=0, nullable=False)
+  visit_threshold_readched = Column(Boolean(), default=False, nullable=False)
   max_zone = Column(Integer, default=10000, nullable=False)
+  #
   deleted = Column(Boolean(), default=False, nullable=False)
   creation_dt    = Column(DateTime, default=datetime.datetime.now, nullable=False)
   activation_dt = Column(DateTime, default=datetime.datetime.now, nullable=False)
@@ -158,12 +168,18 @@ class Zone(Base, BaseTable, SerializerMixin):
   def __repr__(self):
     return f"{self.__tablename__}({self.id}, {self.description}, FK.room_id={self.room_id})"
 
+  @classmethod
+  def is_max_zone_contract(cls, db, payload: dict, company_id:str, table:DeclarativeMeta) -> bool:
+    return False;
+
 
   @classmethod
   def check_exists(cls, db, payload: dict, company_id:str, table:DeclarativeMeta) -> (bool, bool, int): # (row_exists, tentative_exceeding_max_zone, current_zone_count)
     row_exists = super().check_exists(db, payload, company_id, table)[0]
     is_delete_zone = payload.get("deleted") == True
-    max_zone_list = db.native_select_rows([max_zone_sql.format(company_id=company_id, p_is_row= 1 if row_exists else 0)])[0]
+    max_zone_list = db.native_select_rows([max_zone_sql.format(company_id=company_id, p_is_row= 1 if row_exists else 0)])[0] \
+                    if cls.is_max_zone_contract(db, payload, company_id, table) else \
+                    { "tentative_exceeding_max_zone":[False,None], "current_zone_count": [1,None] }
     if (len(max_zone_list["tentative_exceeding_max_zone"]) == 2) or is_delete_zone : # <-- => max_zone not reached yet
       return row_exists, max_zone_list["tentative_exceeding_max_zone"][0], \
              max_zone_list["current_zone_count"][0] -1 if is_delete_zone else max_zone_list["current_zone_count"][0] \

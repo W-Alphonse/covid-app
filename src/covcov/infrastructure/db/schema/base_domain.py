@@ -26,6 +26,10 @@ class BaseTable:
     pass
 
   @classmethod
+  def execute_on_insert(cls, session:Session, id: str, payload_attr:dict):
+    pass
+
+  @classmethod
   def execute_on_update(cls, session:Session, id: str, payload_attr:dict):
     pass
 

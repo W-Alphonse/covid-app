@@ -1,7 +1,9 @@
 import datetime
 
-from sqlalchemy import Column, Unicode, ForeignKey, DateTime, BigInteger
+import dateutil
+from sqlalchemy import Column, Unicode, ForeignKey, DateTime, BigInteger, SmallInteger, insert
 from sqlalchemy.dialects.postgresql import BYTEA
+from sqlalchemy.orm import Session
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy import BLOB
 
@@ -28,7 +30,8 @@ group_by = group_by_for_short_report + " ORDER BY nb_contacts desc"
 #
 criteria_phone   = "({}1.phone_number = {} and {}2.phone_number <> {})"
 criteria_visitor = "({}1.visitor_id = {} and {}2.visitor_id <> {})"
-criteria_visit_dt = "({}2.visit_datetime between {}1.visit_datetime - interval '{} hour' and {}1.visit_datetime + interval '{} hour')"
+# criteria_visit_dt = "({}2.visit_datetime between {}1.visit_datetime - interval '{} minute' and {}1.visit_datetime + interval '{} minute')"
+criteria_visit_dt = "({0}2.visit_datetime between {0}1.visit_s_datetime and {0}1.visit_e_datetime)"
 criteria_company  = "({}1.company_id = '{}' and {}2.company_id = '{}')"
 #
 criteria_phone_exists   = "{}1.phone_number = {}"
@@ -56,6 +59,10 @@ class Visit(Base, BaseTable, SerializerMixin):
   fname = Column(BLOB)
   lname = Column(BLOB)
   visit_datetime = Column(DateTime, default=datetime.datetime.now, nullable=False)
+  visit_s_datetime = Column(DateTime, default=datetime.datetime.now, nullable=False)
+  visit_e_datetime = Column(DateTime, default=datetime.datetime.now, nullable=False)
+  # minutes_bfore_visit_dt = Column(SmallInteger, default=0, nullable=False)
+  # minutes_after_visit_dt = Column(SmallInteger, default=0, nullable=False)
   #
   # _visitor_id  = Column(Unicode(15))
   # _phone_number = Column(Unicode(20))
@@ -81,6 +88,13 @@ class Visit(Base, BaseTable, SerializerMixin):
   def decrypt(cls, contact:dict, attr_name:str, c):
     return crypto.decrypt([attr_value for attr_value in contact[attr_name]], c.kms_clt, c.encrypted_data_key, c.iv, encryption_context={})
 
+  @classmethod
+  def execute_on_insert(cls, session:Session, id: str, cloned_payload:dict):
+    cloned_payload.pop('fname', None)
+    cloned_payload.pop('lname', None)
+    cloned_payload.pop('visitor_id', None)
+    cloned_payload.pop('phone_number', None)
+    session.execute(insert(VisitHist).values(cloned_payload) )
 
   @classmethod
   def compose_ccontact_result(cls, result_keys:[], result_list:[dict], c) -> {} :
@@ -130,13 +144,13 @@ class Visit(Base, BaseTable, SerializerMixin):
     vid =  criteria.get('visitor_id')
     vid =  vid.strip() if vid and vid.strip() else None
     #
-    # hbv = criteria.get('h_before_visit')
-    # hbv = hbv.strip() if hbv and hbv.strip() else 1
+    # mbv = criteria.get('m_before_visit')
+    # mbv = mbv.strip() if mbv and mbv.strip() else 1
     #
-    # hav = criteria.get('h_after_visit')
-    # hav = hbv.strip() if hav and hav.strip() else 1
-    hbv = 1 if criteria.get('h_before_visit') is None else criteria.get('h_before_visit')
-    hav = 1 if criteria.get('h_after_visit') is None else criteria.get('h_after_visit')
+    # mav = criteria.get('m_after_visit')
+    # mav = mbv.strip() if mav and mav.strip() else 1
+    # mbv = 0 if criteria.get('m_before_visit') is None else criteria.get('m_before_visit')
+    # mav = 0 if criteria.get('m_after_visit') is None else criteria.get('m_after_visit')
     # 1 - Add phone_number + visitor_id Criteria
     criteria_sql = criteria_visitor.format(v_alias, vid, v_alias, vid)   if phone == None else \
                    criteria_phone.format(v_alias, phone, v_alias, phone) if vid   == None else \
@@ -145,15 +159,16 @@ class Visit(Base, BaseTable, SerializerMixin):
     if criteria.get('company_id') is not None :
       criteria_sql = '{} and {}'.format( criteria_company.format(v_alias, criteria.get('company_id'), v_alias, criteria.get('company_id')), criteria_sql)
     # 3 - Add visit_datetime Criteria
-    criteria_sql = '{} and {}'.format(criteria_sql, criteria_visit_dt.format(v_alias, v_alias, hbv, v_alias, hav) )
+    # criteria_sql = '{} and {}'.format(criteria_sql, criteria_visit_dt.format(v_alias, v_alias, mbv, v_alias, mav) )
+    criteria_sql = '{} and {}'.format(criteria_sql, criteria_visit_dt.format(v_alias) )
     #
     return main_qry.format(v_alias, v_alias, v_alias, v_alias, criteria_sql)
 
   def _compose_criteria_exists(criteria:dict, v_alias:str) -> str :
     phone = criteria.get('phone_number')
     vid =  criteria.get('visitor_id')
-    hbv = 1 if criteria.get('h_before_visit') is None else criteria.get('h_before_visit')
-    hav = 1 if criteria.get('h_after_visit') is None else criteria.get('h_after_visit')
+    # mbv = 0 if criteria.get('m_before_visit') is None else criteria.get('m_before_visit')
+    # mav = 0 if criteria.get('m_after_visit') is None else criteria.get('m_after_visit')
     # 1 - Add phone_number + visitor_id Criteria
     criteria_sql = criteria_visitor_exists.format(v_alias, vid) \
                    if phone == None else criteria_phone_exists.format(v_alias, phone) \
@@ -174,6 +189,14 @@ class Visit(Base, BaseTable, SerializerMixin):
   @classmethod
   def execute_before_insert(cls, payload_attr:dict, additionnal_ctx):
     cls.visit_encrypt_data(payload_attr, additionnal_ctx)
+    payload_attr['visit_datetime'] = datetime.datetime.now()
+    #
+    minutes_bfore_visit_dt = dateutil.relativedelta.relativedelta(minutes=payload_attr.get('minutes_bfore_visit_dt',0))
+    minutes_after_visit_dt = dateutil.relativedelta.relativedelta(minutes=payload_attr.get('minutes_after_visit_dt',0))
+    payload_attr['visit_s_datetime'] = payload_attr['visit_datetime'] - minutes_bfore_visit_dt
+    payload_attr['visit_e_datetime'] = payload_attr['visit_datetime'] + minutes_after_visit_dt
+    payload_attr.pop("minutes_bfore_visit_dt",None)
+    payload_attr.pop("minutes_after_visit_dt",None)
 
   @classmethod
   def visit_encrypt_data(cls, payload_attr:dict, additionnal_ctx, b64_encode=False):
@@ -213,34 +236,36 @@ class Visit(Base, BaseTable, SerializerMixin):
     if visiting_date_criteria_is_missing :
       raise ValueError(f"Please indicate 'visiting date' before search")
 
-  @classmethod
-  def compose_purge_sqls(cls, days_count:float, chunk_size:int):
-    dt = datetime.datetime.now() - datetime.timedelta(days=days_count)
-    str_now = datetime.datetime.strftime(dt, "%Y-%m-%d %H:%M:%S")
-    sql = []
-    sql.append(insert_hist.format(str_now, chunk_size))
-    sql.append(delete_visit.format(str_now, chunk_size))
-    return sql
+  # @classmethod
+  # def compose_purge_sqls(cls, days_count:float, chunk_size:int):
+  #   dt = datetime.datetime.now() - datetime.timedelta(days=days_count)
+  #   str_now = datetime.datetime.strftime(dt, "%Y-%m-%d %H:%M:%S")
+  #   sql = []
+  #   sql.append(insert_hist.format(str_now, chunk_size))
+  #   sql.append(delete_visit.format(str_now, chunk_size))
+  #   return sql
 
 # ============
 #  VisitHisto   sha256(c.name::bytea)
 # ============
-delete_visit = "delete from visit where id = any (array(SELECT id FROM visit where visit_datetime < TIMESTAMP '{}' limit {})) "
-insert_hist = "insert into visit_histo(id, company_id, room_id, zone_id, visitor_id, phone_number, visit_datetime, creation_dt) " \
-              "select id, company_id, room_id, zone_id, sha256(visitor_id::bytea) as visitor_id, sha256(phone_number::bytea) as phone_number, visit_datetime, now() from visit where visit_datetime < TIMESTAMP '{}' limit {} "
+# delete_visit = "delete from visit where id = any (array(SELECT id FROM visit where visit_datetime < TIMESTAMP '{}' limit {})) "
+# insert_hist = "insert into visit_histo(id, company_id, room_id, zone_id, visitor_id, phone_number, visit_datetime, creation_dt) " \
+#               "select id, company_id, room_id, zone_id, sha256(visitor_id::bytea) as visitor_id, sha256(phone_number::bytea) as phone_number, visit_datetime, now() from visit where visit_datetime < TIMESTAMP '{}' limit {} "
 
 class VisitHist(Base, BaseTable, SerializerMixin):
   __tablename__ = 'visit_histo'
   __table_args__ = {'extend_existing': True}
   #
-  id = Column(BigInteger, autoincrement=False, primary_key=True)
+  id = Column(BigInteger, primary_key=True)
   company_id  = Column(Unicode(BaseTable.SUB_SIZE), ForeignKey("company.id"), nullable=False)
   room_id     = Column(Unicode(10), ForeignKey("room.id"), nullable=False)
   zone_id     = Column(Unicode(10), ForeignKey("zone.id"), nullable=False)
   #
-  visitor_id  = Column(BYTEA(32))
-  phone_number = Column(BYTEA(32))
+  # visitor_id  = Column(BYTEA(32))
+  # phone_number = Column(BYTEA(32))
   visit_datetime = Column(DateTime, nullable=False)
+  visit_s_datetime = Column(DateTime, nullable=False)
+  visit_e_datetime = Column(DateTime, nullable=False)
   creation_dt    = Column(DateTime, default=datetime.datetime.now, nullable=False)
 
   def __repr__(self):

@@ -68,12 +68,12 @@ def create_user(event, db, kms_clt):
 #   db = Database("database")
 #   kms_clt = boto3.client('kms', config=Config(connect_timeout=10, read_timeout=10, retries={'max_attempts': 3}))
 #
-#
 #   event = {}
 #   _sub = '¤' + str(datetime.datetime.now())
+#   # _sub = '9897c979-cf38-477c-a496-b17e93804c83'
 #   event['request'] = { 'userAttributes' : { 'sub': _sub, 'email': _sub + '@gmail.com',
 #                                             'email_verified' : 'true', 'cognito:user_status': 'CONFIRMED',
-#                                             'custom:etablissement': MEDIC,  'custom:company_name': _sub   } }
+#                                             'custom:etablissement': MEDIC,  'custom:company_name': _sub } }
 #   event['userName'] = _sub + '_name'
 #   event['region'] = region
 #   event['userPoolId'] = user_pool_id

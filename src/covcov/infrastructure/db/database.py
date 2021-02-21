@@ -36,9 +36,14 @@ class Database :
     with self.session_scope() as session:
       for i, payload in enumerate(payloads) :
         tables[i].execute_before_insert(payload, additionnal_ctx)
-        insert_stmt = insert(tables[i]).values(payload if isinstance(payload,dict) else json.loads(payload) )
+        if not isinstance(payload,dict) :
+          payload = json.loads(payload)
+        insert_stmt = insert(tables[i]).values(payload)
         # logger.info(str(insert_stmt))
         session.execute(insert_stmt)
+        #
+        cloned_payload= payloads[i].copy()
+        tables[i].execute_on_insert(session, id, cloned_payload)
 
 
   def upsert_value_with_overwrite(self, datas:[typing.Union[dict, str]], tables:[DeclarativeMeta]):
@@ -185,8 +190,8 @@ class Database :
 
 if __name__ == '__main__':
   pass
-  #  db = Database("database")
-  #  db.create_missing_tables()
+  # db = Database("database")
+  # db.create_missing_tables()
   # **db.reset_tables()**
   # db.insert_value([dict({"id":"comp_1", "address":"24 Avenue Frayce", "zip_code":"93400"}),
   #                 dict({"id":"room_1.1", "description":"ROOM_1.1", "comp_id":"comp_1"}),

@@ -57,8 +57,6 @@ def check_route_consistency(method : str, tablename:str, route:str) :
 
 def dispatch(c: Ctx) -> dict:
   try :
-    # _sub = '¤ii4e4rv3s'
-    # auth_claims = {'sub': _sub,  'email': _sub + '@gmail.com' }
     method = c.payload.pop('method') if bool(c.payload.get('method'))  else '' # 1 - Extract 'method type' = POST | GET | DELETE + Payload type + Payload
     tbl_name   = next(iter(c.payload))                                       # 1.a - type values : [company, room, zone, visit]
     tbl_object = vd.Visit   if tbl_name == vd.Visit.__tablename__ else \
