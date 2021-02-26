@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 
 import dateutil
 from sqlalchemy import Column, Unicode, ForeignKey, DateTime, BigInteger, SmallInteger, insert
@@ -92,8 +93,8 @@ class Visit(Base, BaseTable, SerializerMixin):
   def execute_on_insert(cls, session:Session, id: str, cloned_payload:dict):
     cloned_payload.pop('fname', None)
     cloned_payload.pop('lname', None)
-    cloned_payload.pop('visitor_id', None)
-    cloned_payload.pop('phone_number', None)
+    cloned_payload['phone_number'] = hashlib.sha256(cloned_payload.pop('phone_number')).digest()
+    cloned_payload['visitor_id']   = hashlib.sha256(cloned_payload.pop('visitor_id')).digest()
     session.execute(insert(VisitHist).values(cloned_payload) )
 
   @classmethod
@@ -263,6 +264,8 @@ class VisitHist(Base, BaseTable, SerializerMixin):
   #
   # visitor_id  = Column(BYTEA(32))
   # phone_number = Column(BYTEA(32))
+  visitor_id  = Column(BLOB)
+  phone_number = Column(BLOB)
   visit_datetime = Column(DateTime, nullable=False)
   visit_s_datetime = Column(DateTime, nullable=False)
   visit_e_datetime = Column(DateTime, nullable=False)
