@@ -63,8 +63,8 @@ CREATE TABLE public.visit (
 	room_id varchar(10) NOT NULL,
 	zone_id varchar(10) NOT NULL,
 	visit_datetime timestamp NOT NULL,
-    visit_s_datetime timestamp NOT NULL,
-    visit_e_datetime timestamp NOT NULL,
+  visit_s_datetime timestamp NOT NULL,
+  visit_e_datetime timestamp NOT NULL,
 	visitor_id bytea NULL,
 	phone_number bytea NULL,
 	fname bytea NULL,
@@ -83,8 +83,10 @@ CREATE TABLE public.visit_histo (
 	room_id varchar(10) NOT NULL,
 	zone_id varchar(10) NOT NULL,
 	visit_datetime timestamp NOT NULL,
-    visit_s_datetime timestamp NOT NULL,
-    visit_e_datetime timestamp NOT NULL,
+  visit_s_datetime timestamp NOT NULL,
+  visit_e_datetime timestamp NOT NULL,
+	visitor_id bytea NULL,
+	phone_number bytea NULL,    
 	creation_dt timestamp NOT NULL,
 	CONSTRAINT visit_histo_pkey PRIMARY KEY (id)
 );

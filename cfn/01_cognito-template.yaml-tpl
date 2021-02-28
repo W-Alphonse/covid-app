@@ -15,7 +15,8 @@ Globals:
     Timeout: 900
     # KmsKeyArn : ¤cmk_id¤ # KMS utilisée par Lambda pour chiffrer et déchiffrer les variables d'environnement de votre fonction
     Layers:
-      - !Ref CovcovLibsLayer
+      # - !Ref CovcovLibsLayer
+      - Fn::ImportValue: covcov-layer-¤env¤-CovcovLibsLayer
     VpcConfig:
       SecurityGroupIds:
         - sg-¤sg-id¤
@@ -30,45 +31,13 @@ Globals:
 #          Principal:
 #            Service: cognito-idp.amazonaws.com
 #          Action: sts:AssumeRole
+
+
 Resources:
   CovcovLog:
     Type: AWS::Logs::LogGroup
     Properties:
       RetentionInDays: 7
-
-#  CovcovS3Bucket:
-#    Type: AWS::S3::Bucket
-#    Properties:
-#      # BucketName: Fn::Sub "${AWS::S3Bucket}"
-#      BucketName: "¤stack-name¤-¤env¤-1"
-#    DeletionPolicy: Retain # Delete # retain
-
-#  CovcovS3BucketPolicy:
-#    Type: AWS::S3::BucketPolicy
-#    Properties:
-#      Bucket:
-#        Ref: !Ref CovcovS3Bucket
-#      PolicyDocument:
-#        Statement:
-#          - Action: "s3:*"
-#            Resource: "arn:aws:s3:::${AWS::S3Bucket}"
-#            Effect: Allow
-#            Principal:
-#              Service: "cloudformation.amazonaws.com"
-
-  # https://bryson3gps.wordpress.com/2018/12/06/trick-sam-into-building-your-lambda-layers/
-  # https://github.com/aws/aws-sam-cli/pull/840
-  CovcovLibsLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      Description: Dependencies base layer for python apps
-      ContentUri: ./.aws-sam-¤stack-name¤/build/FakeFunction/
-      LayerName: covcov-libs
-      RetentionPolicy: Retain # Retain  Delete
-      CompatibleRuntimes:
-        - python3.8
-    Metadata:
-      BuildMethod: python3.8
 
   # General settings
   CovcovCompanyCognito:
@@ -132,7 +101,6 @@ Resources:
       ClientName: covcov-app
       GenerateSecret: false # set to false for web clients
       PreventUserExistenceErrors: "ENABLED"
-
       TokenValidityUnits:
         AccessToken: "minutes"
         IdToken: "minutes"
@@ -152,6 +120,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_presignup.handle
+      AutoPublishAlias: live
 #      Events:
 #        CovcovCompanyCognitoEvt:
 #          # https://forum.serverless.com/t/linking-lambda-function-to-an-exiting-user-pool/4688/3
@@ -160,23 +129,86 @@ Resources:
 #            UserPool: !Ref CovcovCompanyCognito
 #            Trigger: PreSignUp
 
+  PreSignupScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: ¤max_cap_lambda_generic¤
+      MinCapacity: ¤min_cap_lambda_generic¤
+      ResourceId: !Sub function:${PreSignupFunction}:live # You need to specify an alias or version here
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: PreSignupFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+
+  PreSignupAutoScaling :
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyType: TargetTrackingScaling
+      PolicyName: PreSignupAutoScalingPolicy
+      ScalingTargetId: !Ref PreSignupScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.80
+        ScaleInCooldown: 0    # 0: Default value for Lambdas
+        ScaleOutCooldown: 1   # 0: Default value for Lambdas
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
   PostConfirmationFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_postsignup_confirmation.handle
+      # AutoPublishAlias : ¤env¤-PostConfirmationFunction
+      AutoPublishAlias: live
+#      Name: BLUE
+#      ProvisionedConcurrencyConfig:
+#        ProvisionedConcurrentExecutions: 1
+#      provisionedConcurrency: 5
 
-  FakeFunction:
-    Type: AWS::Serverless::Function
+#  PostConfirmationVersion:
+#    Type: AWS::Lambda::Version
+#    Properties:
+#      FunctionName: !Ref PostConfirmationFunction
+
+#  PostConfirmationAlias:
+#    Type: AWS::Lambda::Alias
+#    Properties:
+#      FunctionName: !Ref PostConfirmationFunction
+#      FunctionVersion: !GetAtt PostConfirmationVersion.Version
+#      Name: PostConfirmation-¤env¤
+#      ProvisionedConcurrencyConfig:
+#        ProvisionedConcurrentExecutions: 20
+
+  PostConfirmationScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
-      Handler: lambda_fake.handle
-      # CodeUri: ../src/layers/fakepackage/
-      CodeUri: ¤relative-path-src¤/layers/fakepackage/
+      MaxCapacity: ¤max_cap_lambda_generic¤
+      MinCapacity: ¤min_cap_lambda_generic¤
+      ResourceId: !Sub function:${PostConfirmationFunction}:live # You need to specify an alias or version here
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: PostConfirmationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+
+  PostConfirmationAutoScaling :
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyType: TargetTrackingScaling
+      PolicyName: PostConfirmationAutoScalingPolicy
+      ScalingTargetId: !Ref PostConfirmationScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.80
+        ScaleInCooldown: 0    # 0: Default value for Lambdas
+        ScaleOutCooldown: 1   # 0: Default value for Lambdas
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
+
 
   CognitoPreSignupInvocationPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt PreSignupFunction.Arn  # !GetAtt MyLambdaFunctionName.Arn
+      FunctionName: !GetAtt PreSignupFunction.Arn
       Principal: cognito-idp.amazonaws.com
       SourceArn: !GetAtt CovcovCompanyCognito.Arn
 
@@ -184,7 +216,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt  PostConfirmationFunction.Arn  # !GetAtt MyLambdaFunctionName.Arn
+      FunctionName: !GetAtt PostConfirmationFunction.Arn
       Principal: cognito-idp.amazonaws.com
       SourceArn: !GetAtt CovcovCompanyCognito.Arn
 
@@ -194,10 +226,9 @@ Outputs:
     Value: !Ref CovcovCompanyCognito
     Export:
       Name: "¤stack-name¤-¤env¤-UserPool::Id"
-      # Name: "UserPool::Id"
-  UserPoolArn:                              # <-- Logical ID
+  UserPoolArn:                                    # <-- Logical ID
     Description : "CovcovCompanyCognito - Pool Arn"
-    Value: !GetAtt CovcovCompanyCognito.Arn # <-- Value to return
+    Value: !GetAtt CovcovCompanyCognito.Arn       # <-- Value to return
     Export:
       Name: !Sub "${AWS::StackName}-UserPoolArn"  # <-- Value to export
   AppClientId:
@@ -205,4 +236,3 @@ Outputs:
     Value: !Ref CovcovClient
     Export:
       Name: "¤stack-name¤-¤env¤-UserPoolClient::Id"
-      # Name: "UserPoolClient::Id"

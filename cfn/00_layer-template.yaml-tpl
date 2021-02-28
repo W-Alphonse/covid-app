@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  Stack: ¤stack-name¤-¤env¤
+Parameters:
+  UserPoolNameCompany:
+    Type: String
+    Default: "¤stack-name¤-¤env¤"
+
+Globals:
+  Function:
+    Runtime: python3.8
+    CodeUri: ¤relative-path-src¤/
+    Timeout: 900
+    # KmsKeyArn : ¤cmk_id¤ # KMS utilisée par Lambda pour chiffrer et déchiffrer les variables d'environnement de votre fonction
+    # Liste des LayerVersion ARNs que cette fonction doit utiliser.
+    Layers:
+      - !Ref CovcovLibsLayer
+    VpcConfig:
+      SecurityGroupIds:
+        - sg-¤sg-id¤
+      SubnetIds:
+        - subnet-¤subnet-id_1¤
+        - subnet-¤subnet-id_2¤
+
+Resources:
+  CovcovLog:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 7
+
+#  CovcovS3Bucket:
+#    Type: AWS::S3::Bucket
+#    Properties:
+#      # BucketName: Fn::Sub "${AWS::S3Bucket}"
+#      BucketName: "¤stack-name¤-¤env¤-1"
+#    DeletionPolicy: Retain # Delete # retain
+
+#  CovcovS3BucketPolicy:
+#    Type: AWS::S3::BucketPolicy
+#    Properties:
+#      Bucket:
+#        Ref: !Ref CovcovS3Bucket
+#      PolicyDocument:
+#        Statement:
+#          - Action: "s3:*"
+#            Resource: "arn:aws:s3:::${AWS::S3Bucket}"
+#            Effect: Allow
+#            Principal:
+#              Service: "cloudformation.amazonaws.com"
+
+  # https://bryson3gps.wordpress.com/2018/12/06/trick-sam-into-building-your-lambda-layers/
+  # https://github.com/aws/aws-sam-cli/pull/840
+  CovcovLibsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Dependencies base layer for python apps
+      ContentUri: ./.aws-sam-¤stack-name¤/build/FakeFunction/
+      LayerName: covcov-libs
+      RetentionPolicy: Retain # Retain  Delete
+      CompatibleRuntimes:
+        - python3.8
+    Metadata:
+      BuildMethod: python3.8
+
+  FakeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_fake.handle
+      # CodeUri: ../src/layers/fakepackage/
+      CodeUri: ¤relative-path-src¤/layers/fakepackage/
+
+Outputs:
+  CovcovLibsLayerRef:                                 # <-- Logical ID
+    Description : "CovcovLibsLayer - Ref/Arn"
+    Value: !Ref CovcovLibsLayer                       # <-- Value to return
+    Export:
+      Name: !Sub "${AWS::StackName}-CovcovLibsLayer"  # <-- Value to export
+
+#  CovcovLibsLayerRefDev:                                 # <-- Logical ID
+#    Description : "CovcovLibsLayer - Ref/Arn"
+#    Value: !Ref CovcovLibsLayer                       # <-- Value to return
+#    Export:
+#      Name: !Sub "${AWS::StackName}-CovcovLibsLayer-¤env¤"  # <-- Value to export

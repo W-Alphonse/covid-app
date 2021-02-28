@@ -1,0 +1,18 @@
+version = 0.1
+
+[default]
+
+# La phase 'package' upload le CODE PYTHON
+[default.package]
+[default.package.parameters]
+s3_bucket = "¤prj-name¤-¤env¤"
+s3_prefix = "layer"
+
+# La phase 'deploy' upload le template
+[default.deploy]
+[default.deploy.parameters]
+s3_bucket = "¤prj-name¤-¤env¤"
+s3_prefix = "template-layer"
+region = "eu-west-3"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM"

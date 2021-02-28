@@ -16,7 +16,8 @@ Globals:
     Timeout: 900
     # KmsKeyArn : ¤cmk_id¤ # KMS utilisée par Lambda pour chiffrer et déchiffrer les variables d'environnement de votre fonction
     Layers:
-      - !Ref CovcovLibsLayer
+      # - !Ref CovcovLibsLayer
+      - Fn::ImportValue: covcov-layer-¤env¤-CovcovLibsLayer
     VpcConfig:
       SecurityGroupIds:
         - sg-¤sg-id¤
@@ -46,20 +47,6 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       RetentionInDays: 7
-
-  # https://bryson3gps.wordpress.com/2018/12/06/trick-sam-into-building-your-lambda-layers/
-  # https://github.com/aws/aws-sam-cli/pull/840
-  CovcovLibsLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      Description: Dependencies base layer for python apps
-      ContentUri: ./.aws-sam-¤stack-name¤/build/FakeFunction/
-      LayerName: covcov-libs
-      RetentionPolicy: Retain # Retain  Delete
-      CompatibleRuntimes:
-        - python3.8
-    Metadata:
-      BuildMethod: python3.8
 
   ApiGwAccountConfig:
     Type: "AWS::ApiGateway::Account"
@@ -95,10 +82,14 @@ Resources:
               Header: auth-id-token
 # Add role cloudwatchlog:   AmazonAPIGatewayPushToCloudWatchLogs / covcov-api-gateway-DEV-CloudWatchLog
 
+  ########################
+  # CompanyDomain
+  ########################
   CompanyDomainFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       Handler: lambda_company_domain.handle
+      AutoPublishAlias: live
       Events:
         CovcovApi:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -109,10 +100,39 @@ Resources:
             Auth:
               Authorizer: CovcovCompanyAuthorizer
 
+  CompanyDomainScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: ¤max_cap_lambda_generic¤
+      MinCapacity: ¤min_cap_lambda_generic¤
+      ResourceId: !Sub function:${CompanyDomainFunction}:live # You need to specify an alias or version here
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: CompanyDomainFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+
+  CompanyDomainAutoScaling :
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyType: TargetTrackingScaling
+      PolicyName: CompanyDomainAutoScalingPolicy
+      ScalingTargetId: !Ref CompanyDomainScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.80
+        ScaleInCooldown: 0    # 0: Default value for Lambdas
+        ScaleOutCooldown: 1   # 0: Default value for Lambdas
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
+
+  ##########################
+  #  CompanyCasContact
+  ##########################
   CompanyCasContactFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_cas_contact.handle
+      AutoPublishAlias: live
       Events:
         CovcovApi:
           Type: Api
@@ -123,10 +143,39 @@ Resources:
             Auth:
               Authorizer: CovcovCompanyAuthorizer
 
+  CompanyCasContactScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: ¤max_cap_lambda_ccontact¤
+      MinCapacity: ¤min_cap_lambda_ccontact¤
+      ResourceId: !Sub function:${CompanyCasContactFunction}:live # You need to specify an alias or version here
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: CompanyCasContactFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+
+  CompanyCasContactAutoScaling :
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyType: TargetTrackingScaling
+      PolicyName: CompanyCasContactAutoScalingPolicy
+      ScalingTargetId: !Ref CompanyCasContactScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.80
+        ScaleInCooldown: 0    # 0: Default value for Lambdas
+        ScaleOutCooldown: 1   # 0: Default value for Lambdas
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
+
+  ######################
+  #  VisitDomain
+  ######################
   VisitDomainFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: lambda_visit_domain.handle
+      AutoPublishAlias: live
       Events:
         CovcovApi:
           Type: Api
@@ -135,12 +184,30 @@ Resources:
             Method: post
             RestApiId: !Ref CovcovApi
 
-  FakeFunction:
-    Type: AWS::Serverless::Function
+  VisitDomainScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
-      Handler: lambda_fake.handle
-      # CodeUri: ../src/layers/fakepackage/
-      CodeUri: ¤relative-path-src¤/layers/fakepackage/
+      MaxCapacity: ¤max_cap_lambda_visit¤
+      MinCapacity: ¤min_cap_lambda_visit¤
+      ResourceId: !Sub function:${VisitDomainFunction}:live # You need to specify an alias or version here
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: VisitDomainFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+
+  VisitDomainAutoScaling :
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyType: TargetTrackingScaling
+      PolicyName: VisitDomainAutoScalingPolicy
+      ScalingTargetId: !Ref VisitDomainScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.80
+        ScaleInCooldown: 0    # 0: Default value for Lambdas
+        ScaleOutCooldown: 1   # 0: Default value for Lambdas
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
 
   covcovSymKey:
     Type: AWS::KMS::Key
@@ -194,11 +261,16 @@ Resources:
           - kms:GenerateDataKeyWithoutPlaintext
           Resource: '*'
 
-  covcovSymKeyAlias:
-    Type: AWS::KMS::Alias
-    Properties:
-      AliasName: alias/covcov-kms-¤env¤
-      TargetKeyId: !GetAtt covcovSymKey.Arn
+# KEEP THIS :
+# https://stackoverflow.com/questions/62654684/terraform-alreadyexistsexception-an-alias-with-the-name-arnawskmsxxxxxxxxxx
+# BCAUSE : the resource was created manually in AWS
+#  covcovSymKeyAlias:
+#    Type: AWS::KMS::Alias
+#    Properties:
+#      AliasName: alias/covcov-kms-¤env¤
+#      TargetKeyId: !GetAtt covcovSymKey.Arn
+
+
 
 # ParameterStoreApiCredentialsEncryptionKeyAlias:
 #   Type: AWS::KMS::Alias
