@@ -12,8 +12,6 @@ AES_KEY_BYTES = 16  # => 128 bits
 AES_KEY_SPEC = 'AES_256'
 AES_MODE = AES.MODE_CBC
 
-
-
 def generate_data_key(kms_clt: BaseClient, key_id: str, encryption_context={}) -> (bytes, bytes) :
     res = kms_clt.generate_data_key(KeyId=key_id, KeySpec=AES_KEY_SPEC, EncryptionContext=encryption_context)
     ''' import base64
@@ -46,7 +44,16 @@ def encrypt(datas:[], kms_clt: BaseClient, encrypted_data_key: bytes, iv: bytes,
         ciphertext = cipher.encrypt(message)
         binary_enc_data.append(ciphertext)
         b64_enc_data.append(kmshelpers.b64encode(ciphertext))
+    # logEnc([datas, b64_enc_data, binary_enc_data])
     return b64_enc_data, binary_enc_data
+
+# def logEnc(lol: [[]]) :
+#     # lol : list-of-list
+#     import logging
+#     logger = logging.getLogger(__name__)
+#     logger.info("--\n")
+#     for datas in lol :
+#         logger.info(datas)
 
 def decrypt(benc_datas:[], kms_clt: BaseClient, encrypted_data_key: bytes, iv: bytes, encryption_context={}) -> []:
     key = get_plaintext_data_key(kms_clt, encrypted_data_key, encryption_context={})
@@ -58,4 +65,5 @@ def decrypt(benc_datas:[], kms_clt: BaseClient, encrypted_data_key: bytes, iv: b
         else :
             cipher = get_cipher(key, iv)
             datas.append( pkcs7.unpad(cipher.decrypt(benc_data.tobytes()), block_size=AES_KEY_BYTES).decode('UTF-8'))
+    # logEnc([benc_datas, datas])
     return datas

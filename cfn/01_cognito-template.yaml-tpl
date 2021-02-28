@@ -129,6 +129,7 @@ Resources:
 #            UserPool: !Ref CovcovCompanyCognito
 #            Trigger: PreSignUp
 
+  # https://gist.github.com/danilop/75561c2660275fc328a68741f6d01066#file-template-yaml-L32
   PreSignupScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:

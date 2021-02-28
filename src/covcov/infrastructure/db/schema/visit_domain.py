@@ -32,7 +32,8 @@ group_by = group_by_for_short_report + " ORDER BY nb_contacts desc"
 criteria_phone   = "({}1.phone_number = {} and {}2.phone_number <> {})"
 criteria_visitor = "({}1.visitor_id = {} and {}2.visitor_id <> {})"
 # criteria_visit_dt = "({}2.visit_datetime between {}1.visit_datetime - interval '{} minute' and {}1.visit_datetime + interval '{} minute')"
-criteria_visit_dt = "({0}2.visit_datetime between {0}1.visit_s_datetime and {0}1.visit_e_datetime)"
+# https://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
+criteria_visit_dt = "({0}1.visit_s_datetime <= {0}1.visit_e_datetime)"
 criteria_company  = "({}1.company_id = '{}' and {}2.company_id = '{}')"
 #
 criteria_phone_exists   = "{}1.phone_number = {}"
