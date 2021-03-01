@@ -94,9 +94,16 @@ class Visit(Base, BaseTable, SerializerMixin):
   def execute_on_insert(cls, session:Session, id: str, cloned_payload:dict):
     cloned_payload.pop('fname', None)
     cloned_payload.pop('lname', None)
-    cloned_payload['phone_number'] = hashlib.sha256(cloned_payload.pop('phone_number')).digest()
-    cloned_payload['visitor_id']   = hashlib.sha256(cloned_payload.pop('visitor_id')).digest()
+    #
+    cls.sha256_att_payload(cloned_payload, 'phone_number')
+    cls.sha256_att_payload(cloned_payload, 'visitor_id')
     session.execute(insert(VisitHist).values(cloned_payload) )
+
+  @classmethod
+  def sha256_att_payload(cls, payload:dict, att_name:str):
+    att_value = payload.pop(att_name, None)
+    if att_value is not None:
+      payload[att_name] = hashlib.sha256(att_value).digest()
 
   @classmethod
   def compose_ccontact_result(cls, result_keys:[], result_list:[dict], c) -> {} :
