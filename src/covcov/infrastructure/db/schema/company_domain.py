@@ -26,10 +26,11 @@ class Company(Base, BaseTable, SerializerMixin):
   __table_args__ = {'extend_existing': True}
   OFFER_DISCOV  = 'DISCOV'
   OFFER_STD     = 'STD'
+  OFFER_ENTR    = 'ENTR'
   OFFER_PREM    = 'PREM'
-  OFFER_PREM_PUS = 'PREM_P'
+  # OFFER_PREM_PUS = 'PREM_P'
   #
-  VISIT_PM_DISCOV = 3000
+  DISCOV_VISITOR_PM = 10
 
   id = Column(Unicode(BaseTable.SUB_SIZE), primary_key=True) # cognito:sub
   name = Column(Unicode(50), nullable=False)                 # custom:company_name
@@ -46,10 +47,19 @@ class Company(Base, BaseTable, SerializerMixin):
   encrypted_data_key = Column(BLOB)
   iv  = Column(BLOB)
   #
-  offer = Column(Unicode(10), default=OFFER_DISCOV, nullable=False)   # DISCOV | STD | PREM | PREM_P
-  contractual_visit_per_month = Column(Integer, default=VISIT_PM_DISCOV, nullable=False)
-  cumulative_visit_per_month = Column(Integer, default=0, nullable=False)
-  visit_threshold_readched = Column(Boolean(), default=False, nullable=False)
+  offer = Column(Unicode(10), default=OFFER_DISCOV, nullable=False)   # DISCOV | STD | ENTR | PREM
+  contractual_visitor_pmonth = Column(Integer, default=DISCOV_VISITOR_PM, nullable=False)
+  visitor_on_last_count   = Column(Integer, default=0, nullable=False)
+  visit_on_last_count = Column(Integer, default=0, nullable=False)
+  last_count_dt = Column(DateTime, default=datetime.datetime.now, nullable=False)
+  # real_visitor_cmonth  visitor_on_last_count   = Column(Integer, default=0, nullable=False)
+  # cumulative_visit_cmonth visit_on_last_count = Column(Integer, default=0, nullable=False)
+  # last_counted_visitor_dt last_count_dt = Column(DateTime, default=datetime.datetime.now, nullable=False)
+
+
+  # contractual_visit_per_month = Column(Integer, default=VISIT_PM_DISCOV, nullable=False)
+  # cumulative_visit_per_month = Column(Integer, default=0, nullable=False)
+  # visit_threshold_readched = Column(Boolean(), default=False, nullable=False) # TODO: Remove it
   max_zone = Column(Integer, default=10000, nullable=False)
   #
   deleted = Column(Boolean(), default=False, nullable=False)

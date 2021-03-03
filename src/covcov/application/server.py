@@ -12,6 +12,7 @@ from covcov.application import route_dispatcher
 # Flask object and properties
 from covcov.infrastructure.db.database import Database
 from covcov.infrastructure.cognito.idp_connexion import IdpConnexion
+from covcov.infrastructure.db.schema import stat_domain
 
 app = Flask(__name__)
 PORT = config["api"]["port"]
@@ -56,6 +57,11 @@ def c_ccontact_api():
 def a_ccontact_api():
     # return _process_result(route_dispatcher.dispatch(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'], 'id'), request.path, db))
     return _process_result( route_dispatcher.dispatch(Ctx(request.get_json(), request.args, cognito_idp.get_claims(request.headers['auth-id-token'], 'id'), request.path, db, kms_clt, config["kms"]["cmk_id"])) )
+
+@app.route("/stat_visit", methods=["POST"])
+@cross_origin(headers=['Content-Type'])
+def update_visisit_stat_api():
+    return _process_result( stat_domain.CompanyVisit.update_visisit_stat(db) )
 
 @app.route("/example", methods=["POST"])
 def example():

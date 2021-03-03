@@ -13,7 +13,7 @@ Globals:
   Function:
     Runtime: python3.8
     CodeUri: ¤relative-path-src¤/
-    Timeout: 900
+    Timeout: 180
     # KmsKeyArn : ¤cmk_id¤ # KMS utilisée par Lambda pour chiffrer et déchiffrer les variables d'environnement de votre fonction
     Layers:
       # - !Ref CovcovLibsLayer
@@ -82,6 +82,16 @@ Resources:
               Header: auth-id-token
 # Add role cloudwatchlog:   AmazonAPIGatewayPushToCloudWatchLogs / covcov-api-gateway-DEV-CloudWatchLog
 
+  ######################
+  # PreSignupFunction
+  ######################
+  VisitCountFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_visit_count.handle
+      AutoPublishAlias: live
+
+
   ########################
   # CompanyDomain
   ########################
@@ -119,8 +129,8 @@ Resources:
       ScalingTargetId: !Ref CompanyDomainScalableTarget
       TargetTrackingScalingPolicyConfiguration:
         TargetValue: 0.80
-        ScaleInCooldown: 0    # 0: Default value for Lambdas
-        ScaleOutCooldown: 1   # 0: Default value for Lambdas
+        ScaleInCooldown: 3   # 0: Default value for Lambdas
+        ScaleOutCooldown: 2   # 0: Default value for Lambdas
         PredefinedMetricSpecification:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
@@ -162,8 +172,8 @@ Resources:
       ScalingTargetId: !Ref CompanyCasContactScalableTarget
       TargetTrackingScalingPolicyConfiguration:
         TargetValue: 0.80
-        ScaleInCooldown: 0    # 0: Default value for Lambdas
-        ScaleOutCooldown: 1   # 0: Default value for Lambdas
+        ScaleInCooldown: 3   # 0: Default value for Lambdas
+        ScaleOutCooldown: 2   # 0: Default value for Lambdas
         PredefinedMetricSpecification:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
@@ -203,8 +213,8 @@ Resources:
       ScalingTargetId: !Ref VisitDomainScalableTarget
       TargetTrackingScalingPolicyConfiguration:
         TargetValue: 0.80
-        ScaleInCooldown: 0    # 0: Default value for Lambdas
-        ScaleOutCooldown: 1   # 0: Default value for Lambdas
+        ScaleInCooldown: 3   # 0: Default value for Lambdas
+        ScaleOutCooldown: 2   # 0: Default value for Lambdas
         PredefinedMetricSpecification:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 

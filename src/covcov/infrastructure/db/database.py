@@ -118,12 +118,13 @@ class Database :
         continue
       # 2 - Execute the query ...
       resultProxy = self.engine.execute(sql_query)  # <-- ResultProxy object is made up of RowProxy objects
-      rows = resultProxy.fetchall()
+      # rows = resultProxy.fetchall()
       # 3 - Store the result in dictionnary
       if resultProxy.rowcount != 0 :
         master_qry_has_result = master_qry_has_result or (i == master_qry_ndx)
         dd = defaultdict(list)
         cols_list = resultProxy.keys()
+        rows = resultProxy.fetchall() if len(cols_list) != 0 else []
         for row in rows :                      # <-- type(row) == tuple
           for i in range(0, len(cols_list)) :  # <-- extract one row and add it to defaultdict
             dd[cols_list[i]].append(row[i] if row[i] is not None else '')

@@ -12,7 +12,7 @@ Globals:
   Function:
     Runtime: python3.8
     CodeUri: ¤relative-path-src¤/
-    Timeout: 900
+    Timeout: 180
     # KmsKeyArn : ¤cmk_id¤ # KMS utilisée par Lambda pour chiffrer et déchiffrer les variables d'environnement de votre fonction
     Layers:
       # - !Ref CovcovLibsLayer
@@ -116,6 +116,9 @@ Resources:
       Domain : "¤prj-name¤-¤env¤"
       UserPoolId: !Ref CovcovCompanyCognito
 
+  ######################
+  # PreSignupFunction
+  ######################
   PreSignupFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -149,11 +152,14 @@ Resources:
       ScalingTargetId: !Ref PreSignupScalableTarget
       TargetTrackingScalingPolicyConfiguration:
         TargetValue: 0.80
-        ScaleInCooldown: 0    # 0: Default value for Lambdas
-        ScaleOutCooldown: 1   # 0: Default value for Lambdas
+        ScaleInCooldown: 3    # 0: Default value for Lambdas
+        ScaleOutCooldown: 2   # 0: Default value for Lambdas
         PredefinedMetricSpecification:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
+  ############################
+  # PostConfirmationFunction
+  ############################
   PostConfirmationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -198,8 +204,8 @@ Resources:
       ScalingTargetId: !Ref PostConfirmationScalableTarget
       TargetTrackingScalingPolicyConfiguration:
         TargetValue: 0.80
-        ScaleInCooldown: 0    # 0: Default value for Lambdas
-        ScaleOutCooldown: 1   # 0: Default value for Lambdas
+        ScaleInCooldown: 3    # 0: Default value for Lambdas
+        ScaleOutCooldown: 2   # 0: Default value for Lambdas
         PredefinedMetricSpecification:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
