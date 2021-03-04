@@ -6,7 +6,7 @@ class BaseTable:
   SUB_SIZE = 36
 
   @classmethod
-  def check_business_rules_for_upsert(cls, payload_attr:dict):
+  def check_business_rules_for_upsert(cls, db, payload_attr:dict):
     pass
 
   @classmethod

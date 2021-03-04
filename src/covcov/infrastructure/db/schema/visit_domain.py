@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy import BLOB
 
+from covcov.application.BusinessException import BusinessException
 from covcov.infrastructure.db import Base
 from covcov.infrastructure.db.schema import company_domain
 from covcov.infrastructure.db.schema.base_domain import BaseTable
@@ -225,12 +226,22 @@ class Visit(Base, BaseTable, SerializerMixin):
 
 
   @classmethod
-  def check_business_rules_for_upsert(cls, attr:dict):
+  def check_business_rules_for_upsert(cls, db, attr:dict):
     if (attr.get('company_id') is None) or (attr.get('room_id') is None) or (attr.get('zone_id') is None)  :
       raise ValueError(f"'Visit' entity instance should reference a well identified location => Indicate 'company_id, room_id and zone_id' ")
     #
     if ( (attr.get('phone_number') is None)  and (attr.get('visitor_id') is None)  ):
       raise ValueError(f"'Visit' entity instance should reference a well identified client => Either indicate 'phone_number' or 'visitor_id' ")
+    #
+    if datetime.datetime.now().day != 1 :
+      sql = "select offer, contractual_visitor_pmonth, visitor_on_last_count, visit_on_last_count, last_count_dt from company where id = '{0}' and visitor_on_last_count > contractual_visitor_pmonth"
+      # sql = "select offer, contractual_visitor_pmonth, visitor_on_last_count, visit_on_last_count, last_count_dt from company where id = '{0}' "
+      companies = db.native_select_rows([sql.format(attr.get('company_id')) ])[0]
+      if len(companies["contractual_visitor_pmonth"]) != 0 :
+        if (1==1) or companies["visitor_on_last_count"][0] > companies["contractual_visitor_pmonth"][0] :
+          raise BusinessException( {"offer" : companies["offer"][0], "contractual_visitor_pmonth" : companies["contractual_visitor_pmonth"][0],
+                "visitor_on_last_count" : companies["visitor_on_last_count"][0], "last_count_dt" : companies["last_count_dt"][0].strftime("%Y-%m-%d %H:%M:%S"),
+                "error" : "Excessive use of Covcov: The 'count of user' exceeds the 'contracted allowed user'"})
 
   @classmethod
   def check_business_rules_for_select(cls, attr:dict):

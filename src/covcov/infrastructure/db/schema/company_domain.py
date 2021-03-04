@@ -52,11 +52,7 @@ class Company(Base, BaseTable, SerializerMixin):
   visitor_on_last_count   = Column(Integer, default=0, nullable=False)
   visit_on_last_count = Column(Integer, default=0, nullable=False)
   last_count_dt = Column(DateTime, default=datetime.datetime.now, nullable=False)
-  # real_visitor_cmonth  visitor_on_last_count   = Column(Integer, default=0, nullable=False)
-  # cumulative_visit_cmonth visit_on_last_count = Column(Integer, default=0, nullable=False)
-  # last_counted_visitor_dt last_count_dt = Column(DateTime, default=datetime.datetime.now, nullable=False)
-
-
+  #
   # contractual_visit_per_month = Column(Integer, default=VISIT_PM_DISCOV, nullable=False)
   # cumulative_visit_per_month = Column(Integer, default=0, nullable=False)
   # visit_threshold_readched = Column(Boolean(), default=False, nullable=False) # TODO: Remove it

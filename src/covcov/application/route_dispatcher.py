@@ -74,7 +74,7 @@ def dispatch(c: Ctx) -> dict:
     method_result="Success :-)"
     if method.upper() == 'POST' or method.upper() == 'PUT' :
       tbl_object.enhance_payload_with_auth_token(c.payload[tbl_name], c.auth_claims)
-      tbl_object.check_business_rules_for_upsert(c.payload[tbl_name])
+      tbl_object.check_business_rules_for_upsert(c.db, c.payload[tbl_name])
       tbl_object.execute_before_upsert(c.payload[tbl_name])
       if tbl_object == vd.Visit :
         url, c.encrypted_data_key, c.iv = select_company_attributes(c.payload[tbl_name]['company_id'], c.db)
