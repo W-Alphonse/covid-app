@@ -1,33 +1,65 @@
-
 BEGIN;
 
+-- public.company definition
+
+-- Drop table
+
+-- DROP TABLE public.company;
+
 CREATE TABLE public.company (
-	id VARCHAR(36) NOT NULL, 
-	name VARCHAR(50) NOT NULL, 
-	type VARCHAR(10), 
-	siret VARCHAR(14), 
-	address VARCHAR(300), 
-	zip_code VARCHAR(10), 
-	country_code VARCHAR(2), 
-	phone_number VARCHAR(20), 
-	email VARCHAR(64) NOT NULL, 
-	contact_fname VARCHAR(20), 
-	contact_lname VARCHAR(20), 
-	url VARCHAR(128), 
-	encrypted_data_key bytea, 
-	iv bytea, 
-	offer VARCHAR(10) NOT NULL, 
-	contractual_visit_per_month INTEGER NOT NULL, 
-	cumulative_visit_per_month INTEGER NOT NULL, 
-	visit_threshold_readched BOOLEAN NOT NULL, 
-	max_zone INTEGER NOT NULL, 
-	deleted BOOLEAN NOT NULL, 
-	creation_dt TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
-	activation_dt TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
-	deletion_dt TIMESTAMP WITHOUT TIME ZONE, 
-	PRIMARY KEY (id), 
-	UNIQUE (email)
+	id varchar(36) NOT NULL,
+	"name" varchar(50) NOT NULL,
+	"type" varchar(10) NULL,
+	siret varchar(14) NULL,
+	address varchar(300) NULL,
+	zip_code varchar(10) NULL,
+	country_code varchar(2) NULL,
+	phone_number varchar(20) NULL,
+	email varchar(64) NOT NULL,
+	contact_fname varchar(20) NULL,
+	contact_lname varchar(20) NULL,
+	url varchar(128) NULL,
+	offer varchar(10) NOT NULL,
+	max_zone int4 NOT NULL,
+	deleted bool NOT NULL,
+	creation_dt timestamp NOT NULL,
+	activation_dt timestamp NOT NULL,
+	deletion_dt timestamp NULL,
+	encrypted_data_key bytea NULL,
+	iv bytea NULL,
+	contractual_visitor_pmonth int4 NOT NULL,
+	visit_on_last_count int4 NOT NULL,
+	visit_threshold_readched bool NOT NULL,
+	last_count_dt timestamp NOT NULL,
+	visitor_on_last_count int4 NOT NULL,
+	CONSTRAINT company_email_key UNIQUE (email),
+	CONSTRAINT company_pkey PRIMARY KEY (id)
 );
+
+
+-- public.company_visit definition
+
+-- Drop table
+
+-- DROP TABLE public.company_visit;
+
+CREATE TABLE public.company_visit (
+	company_id varchar(36) NOT NULL,
+	start_period_dt timestamp NOT NULL,
+	period_type varchar(3) NOT NULL,
+	visitor_count int4 NOT NULL,
+	visit_count int4 NOT NULL,
+	last_count_dt timestamp NOT NULL,
+	creation_dt timestamp NOT NULL,
+	CONSTRAINT company_visit_pkey PRIMARY KEY (company_id, start_period_dt, period_type)
+);
+
+
+-- public.room definition
+
+-- Drop table
+
+-- DROP TABLE public.room;
 
 CREATE TABLE public.room (
 	id varchar(10) NOT NULL,
@@ -37,11 +69,16 @@ CREATE TABLE public.room (
 	creation_dt timestamp NOT NULL,
 	activation_dt timestamp NOT NULL,
 	deletion_dt timestamp NULL,
-	CONSTRAINT room_pkey PRIMARY KEY (id)
+	CONSTRAINT room_pkey PRIMARY KEY (id),
+	CONSTRAINT room_company_id_fkey FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE
 );
--- public.room foreign keys
-ALTER TABLE public.room ADD CONSTRAINT room_company_id_fkey FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE;
 
+
+-- public."zone" definition
+
+-- Drop table
+
+-- DROP TABLE public."zone";
 
 CREATE TABLE public."zone" (
 	id varchar(10) NOT NULL,
@@ -51,11 +88,16 @@ CREATE TABLE public."zone" (
 	creation_dt timestamp NOT NULL,
 	activation_dt timestamp NOT NULL,
 	deletion_dt timestamp NULL,
-	CONSTRAINT zone_pkey PRIMARY KEY (id)
+	CONSTRAINT zone_pkey PRIMARY KEY (id),
+	CONSTRAINT zone_room_id_fkey FOREIGN KEY (room_id) REFERENCES room(id) ON DELETE CASCADE
 );
--- public."zone" foreign keys
-ALTER TABLE public."zone" ADD CONSTRAINT zone_room_id_fkey FOREIGN KEY (room_id) REFERENCES room(id) ON DELETE CASCADE;
 
+
+-- public.visit definition
+
+-- Drop table
+
+-- DROP TABLE public.visit;
 
 CREATE TABLE public.visit (
 	id bigserial NOT NULL,
@@ -63,19 +105,24 @@ CREATE TABLE public.visit (
 	room_id varchar(10) NOT NULL,
 	zone_id varchar(10) NOT NULL,
 	visit_datetime timestamp NOT NULL,
-  visit_s_datetime timestamp NOT NULL,
-  visit_e_datetime timestamp NOT NULL,
+	visit_s_datetime timestamp NOT NULL,
+	visit_e_datetime timestamp NOT NULL,
 	visitor_id bytea NULL,
 	phone_number bytea NULL,
 	fname bytea NULL,
 	lname bytea NULL,
-	CONSTRAINT visit_pkey PRIMARY KEY (id)
+	CONSTRAINT visit_pkey PRIMARY KEY (id),
+	CONSTRAINT visit_company_id_fkey FOREIGN KEY (company_id) REFERENCES company(id),
+	CONSTRAINT visit_room_id_fkey FOREIGN KEY (room_id) REFERENCES room(id),
+	CONSTRAINT visit_zone_id_fkey FOREIGN KEY (zone_id) REFERENCES zone(id)
 );
--- public.visit foreign keys
-ALTER TABLE public.visit ADD CONSTRAINT visit_company_id_fkey FOREIGN KEY (company_id) REFERENCES company(id);
-ALTER TABLE public.visit ADD CONSTRAINT visit_room_id_fkey FOREIGN KEY (room_id) REFERENCES room(id);
-ALTER TABLE public.visit ADD CONSTRAINT visit_zone_id_fkey FOREIGN KEY (zone_id) REFERENCES zone(id);
 
+
+-- public.visit_histo definition
+
+-- Drop table
+
+-- DROP TABLE public.visit_histo;
 
 CREATE TABLE public.visit_histo (
 	id bigserial NOT NULL,
@@ -83,16 +130,14 @@ CREATE TABLE public.visit_histo (
 	room_id varchar(10) NOT NULL,
 	zone_id varchar(10) NOT NULL,
 	visit_datetime timestamp NOT NULL,
-  visit_s_datetime timestamp NOT NULL,
-  visit_e_datetime timestamp NOT NULL,
-	visitor_id bytea NULL,
-	phone_number bytea NULL,    
+	visit_s_datetime timestamp NOT NULL,
+	visit_e_datetime timestamp NOT NULL,
 	creation_dt timestamp NOT NULL,
-	CONSTRAINT visit_histo_pkey PRIMARY KEY (id)
+	visitor_id bytea NULL,
+	phone_number bytea NULL,
+	CONSTRAINT visit_histo_pkey PRIMARY KEY (id),
+	CONSTRAINT visit_histo_company_id_fkey FOREIGN KEY (company_id) REFERENCES company(id),
+	CONSTRAINT visit_histo_room_id_fkey FOREIGN KEY (room_id) REFERENCES room(id),
+	CONSTRAINT visit_histo_zone_id_fkey FOREIGN KEY (zone_id) REFERENCES zone(id)
 );
--- public.visit_histo foreign keys
-ALTER TABLE public.visit_histo ADD CONSTRAINT visit_histo_company_id_fkey FOREIGN KEY (company_id) REFERENCES company(id);
-ALTER TABLE public.visit_histo ADD CONSTRAINT visit_histo_room_id_fkey FOREIGN KEY (room_id) REFERENCES room(id);
-ALTER TABLE public.visit_histo ADD CONSTRAINT visit_histo_zone_id_fkey FOREIGN KEY (zone_id) REFERENCES zone(id);
-
 COMMIT;
