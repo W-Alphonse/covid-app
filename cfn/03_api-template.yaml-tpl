@@ -83,7 +83,7 @@ Resources:
 # Add role cloudwatchlog:   AmazonAPIGatewayPushToCloudWatchLogs / covcov-api-gateway-DEV-CloudWatchLog
 
   ######################
-  # PreSignupFunction
+  # VisitCountFunction
   ######################
   VisitCountFunction:
     Type: AWS::Serverless::Function
@@ -91,6 +91,14 @@ Resources:
       Handler: lambda_visit_count.handle
       AutoPublishAlias: live
 
+  ######################
+  # VisitPurgeFunction
+  ######################
+  VisitPurgeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_visit_purge.handle
+      AutoPublishAlias: live
 
   ########################
   # CompanyDomain

@@ -27,5 +27,7 @@ def archive_visit(db:Database, days_count=15, chunk_size=300) -> int:
 # if __name__ == '__main__':
 #   from covcov.infrastructure.db.database import Database
 #   db = Database("database")
+#   archive_visit(db)
+#
 #   db.create_missing_tables()
 #   archive_visit(db, 0.2, 10)

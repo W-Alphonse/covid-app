@@ -266,13 +266,20 @@ class Visit(Base, BaseTable, SerializerMixin):
   #   dt = datetime.datetime.now() - datetime.timedelta(days=days_count)
   #   str_now = datetime.datetime.strftime(dt, "%Y-%m-%d %H:%M:%S")
   #   sql = []
-  #   sql.append(insert_hist.format(str_now, chunk_size))
+  #   # sql.append(insert_hist.format(str_now, chunk_size))
   #   sql.append(delete_visit.format(str_now, chunk_size))
   #   return sql
+
+  @classmethod
+  def compose_purge_sqls(cls, days_count:int, chunk_size:int):
+    sql = []
+    sql.append(delete_visit.format(days_count, chunk_size))
+    return sql
 
 # ============
 #  VisitHisto   sha256(c.name::bytea)
 # ============
+delete_visit = "delete from visit where id = any (array(SELECT id FROM visit where visit_datetime < now() - interval '{} day' limit {})) "
 # delete_visit = "delete from visit where id = any (array(SELECT id FROM visit where visit_datetime < TIMESTAMP '{}' limit {})) "
 # insert_hist = "insert into visit_histo(id, company_id, room_id, zone_id, visitor_id, phone_number, visit_datetime, creation_dt) " \
 #               "select id, company_id, room_id, zone_id, sha256(visitor_id::bytea) as visitor_id, sha256(phone_number::bytea) as phone_number, visit_datetime, now() from visit where visit_datetime < TIMESTAMP '{}' limit {} "
