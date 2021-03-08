@@ -41,7 +41,7 @@ criteria_phone_exists   = "{}1.phone_number = {}"
 criteria_visitor_exists = "{}1.visitor_id = {}"
 criteria_company_exists = "{}1.company_id = '{}'"
 
-company_attributes_select = "select c.url, encode(c.encrypted_data_key,'hex') as encrypted_data_key, encode(c.iv,'hex') as iv from company c where c.id='{}' "
+company_attributes_select = "select c.url, c.offer, (c.visitor_on_last_count > c.contractual_visitor_pmonth) as allowed_visitor_count_exceeded, encode(c.encrypted_data_key,'hex') as encrypted_data_key, encode(c.iv,'hex') as iv from company c where c.id='{}' "
 
 # ========
 #  Visit
@@ -226,22 +226,27 @@ class Visit(Base, BaseTable, SerializerMixin):
 
 
   @classmethod
-  def check_business_rules_for_upsert(cls, db, attr:dict):
+  def check_business_rules_for_upsert(cls, attr:dict):
     if (attr.get('company_id') is None) or (attr.get('room_id') is None) or (attr.get('zone_id') is None)  :
       raise ValueError(f"'Visit' entity instance should reference a well identified location => Indicate 'company_id, room_id and zone_id' ")
     #
     if ( (attr.get('phone_number') is None)  and (attr.get('visitor_id') is None)  ):
       raise ValueError(f"'Visit' entity instance should reference a well identified client => Either indicate 'phone_number' or 'visitor_id' ")
-    #
+
+  @classmethod
+  def check_business_rules_for_insert(cls, payload_attr:dict, additionnal_ctx=None):
     if datetime.datetime.now().day != 1 :
-      sql = "select offer, contractual_visitor_pmonth, visitor_on_last_count, visit_on_last_count, last_count_dt from company where id = '{0}' and visitor_on_last_count > contractual_visitor_pmonth"
-      # sql = "select offer, contractual_visitor_pmonth, visitor_on_last_count, visit_on_last_count, last_count_dt from company where id = '{0}' "
-      companies = db.native_select_rows([sql.format(attr.get('company_id')) ])[0]
-      if len(companies["contractual_visitor_pmonth"]) != 0 :
-        if (1==1) or companies["visitor_on_last_count"][0] > companies["contractual_visitor_pmonth"][0] :
-          raise BusinessException( {"offer" : companies["offer"][0], "contractual_visitor_pmonth" : companies["contractual_visitor_pmonth"][0],
-                "visitor_on_last_count" : companies["visitor_on_last_count"][0], "last_count_dt" : companies["last_count_dt"][0].strftime("%Y-%m-%d %H:%M:%S"),
-                "error" : "Excessive use of Covcov: The 'count of user' exceeds the 'contracted allowed user'"})
+      if (additionnal_ctx.offer == 'FREE') and (additionnal_ctx.allowed_visitor_count_exceeded == True) :
+        raise BusinessException( {"offer" : additionnal_ctx.offer, "allowed_visitor_count_exceeded" : additionnal_ctx.allowed_visitor_count_exceeded,
+                                  "error" : "Excessive use of Covcov: The 'count of user' exceeds the 'contracted allowed user'"})
+      # sql = "select offer, contractual_visitor_pmonth, visitor_on_last_count, visit_on_last_count, last_count_dt from company where id = '{0}' and visitor_on_last_count > contractual_visitor_pmonth"
+      # # sql = "select offer, contractual_visitor_pmonth, visitor_on_last_count, visit_on_last_count, last_count_dt from company where id = '{0}' "
+      # companies = db.native_select_rows([sql.format(attr.get('company_id')) ])[0]
+      # if len(companies["contractual_visitor_pmonth"]) != 0 :
+      #   if companies["visitor_on_last_count"][0] > companies["contractual_visitor_pmonth"][0] :
+      #     raise BusinessException( {"offer" : companies["offer"][0], "contractual_visitor_pmonth" : companies["contractual_visitor_pmonth"][0],
+      #           "visitor_on_last_count" : companies["visitor_on_last_count"][0], "last_count_dt" : companies["last_count_dt"][0].strftime("%Y-%m-%d %H:%M:%S"),
+      #           "error" : "Excessive use of Covcov: The 'count of user' exceeds the 'contracted allowed user'"})
 
   @classmethod
   def check_business_rules_for_select(cls, attr:dict):

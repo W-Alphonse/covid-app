@@ -74,10 +74,11 @@ def dispatch(c: Ctx) -> dict:
     method_result="Success :-)"
     if method.upper() == 'POST' or method.upper() == 'PUT' :
       tbl_object.enhance_payload_with_auth_token(c.payload[tbl_name], c.auth_claims)
-      tbl_object.check_business_rules_for_upsert(c.db, c.payload[tbl_name])
+      tbl_object.check_business_rules_for_upsert(c.payload[tbl_name])
       tbl_object.execute_before_upsert(c.payload[tbl_name])
       if tbl_object == vd.Visit :
-        url, c.encrypted_data_key, c.iv = select_company_attributes(c.payload[tbl_name]['company_id'], c.db)
+        url, c.offer, c.allowed_visitor_count_exceeded, c.encrypted_data_key, c.iv = select_company_attributes(c.payload[tbl_name]['company_id'], c.db)
+        tbl_object.check_business_rules_for_insert(c.payload[tbl_name], c)
         c.db.insert_value([c.payload[tbl_name]],[tbl_object], c)
         method_result = {"redirect":f"{url}"}
       else :
@@ -112,7 +113,7 @@ def dispatch(c: Ctx) -> dict:
 # bytes(value, 'utf-8')  bytes.fromhex()
 def select_company_attributes(comp_id:str, db:Database) -> (str, bytes, bytes) :
   result_as_dict = db.native_select_rows( [vd.Visit.select_company_attributes(comp_id)] ) [0]
-  return result_as_dict['url'][0], \
+  return result_as_dict['url'][0], result_as_dict['offer'][0], result_as_dict['allowed_visitor_count_exceeded'][0], \
          bytes.fromhex(result_as_dict['encrypted_data_key'][0] ), \
          bytes.fromhex(result_as_dict['iv'][0] )
 

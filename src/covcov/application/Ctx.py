@@ -16,7 +16,8 @@ class Ctx:
   #
   encrypted_data_key : bytes
   iv : bytes
-
+  offer : str
+  allowed_visitor_count_exceeded : bool
 
   def __init__(self, payload: dict, qry_params:dict, auth_claims:dict, route:str, db:Database, kms_clt:BaseClient, kms_key_id:str) :
     self.payload = payload

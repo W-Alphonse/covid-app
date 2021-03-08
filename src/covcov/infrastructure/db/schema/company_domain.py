@@ -24,6 +24,7 @@ def local_execute_after_select(db, payload_attr:dict, company_id:str) -> dict:
 class Company(Base, BaseTable, SerializerMixin):
   __tablename__ = 'company'
   __table_args__ = {'extend_existing': True}
+  OFFER_FREE    = 'FREE'
   OFFER_DISCOV  = 'DISCOV'
   OFFER_STD     = 'STD'
   OFFER_ENTR    = 'ENTR'
@@ -47,7 +48,7 @@ class Company(Base, BaseTable, SerializerMixin):
   encrypted_data_key = Column(BLOB)
   iv  = Column(BLOB)
   #
-  offer = Column(Unicode(10), default=OFFER_DISCOV, nullable=False)   # DISCOV | STD | ENTR | PREM
+  offer = Column(Unicode(10), default=OFFER_FREE, nullable=False)   # FREE | DISCOV | STD | ENTR | PREM
   contractual_visitor_pmonth = Column(Integer, default=DISCOV_VISITOR_PM, nullable=False)
   visitor_on_last_count   = Column(Integer, default=0, nullable=False)
   visit_on_last_count = Column(Integer, default=0, nullable=False)

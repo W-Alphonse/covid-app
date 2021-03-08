@@ -29,7 +29,6 @@ CREATE TABLE public.company (
 	iv bytea NULL,
 	contractual_visitor_pmonth int4 NOT NULL,
 	visit_on_last_count int4 NOT NULL,
-	visit_threshold_readched bool NOT NULL,
 	last_count_dt timestamp NOT NULL,
 	visitor_on_last_count int4 NOT NULL,
 	CONSTRAINT company_email_key UNIQUE (email),
