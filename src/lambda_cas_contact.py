@@ -19,7 +19,6 @@ app_client_id  = config["cognito"]["COG_APP_CLIENT_ID"]
 cognito_idp = IdpConnexion(region, user_pool_id, app_client_id)
 
 def handle(event, context):
-  print('Ds Lambda CompanyCasContactFunction')
   # return {
   #     'statusCode': 200,
   #     'body': json.dumps('Hello from Lambda!')
