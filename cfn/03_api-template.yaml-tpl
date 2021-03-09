@@ -100,6 +100,48 @@ Resources:
       Handler: lambda_visit_purge.handle
       AutoPublishAlias: live
 
+
+  ######################
+  # VisitPurgeFunction
+  ######################
+  WakeupDbFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_wakeup_db.handle
+      AutoPublishAlias: live
+      Events:
+        CovcovApi:
+          Type: Api
+          Properties:
+            Path: /wakeup_db
+            Method: get
+            RestApiId: !Ref CovcovApi
+
+  WakeupDbScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: ¤max_cap_lambda_generic¤
+      MinCapacity: ¤min_cap_lambda_generic¤
+      ResourceId: !Sub function:${WakeupDbFunction}:live # You need to specify an alias or version here
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: WakeupDbFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+
+  WakeupDbAutoScaling :
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyType: TargetTrackingScaling
+      PolicyName: WakeupDbAutoScalingPolicy
+      ScalingTargetId: !Ref WakeupDbScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.80
+        ScaleInCooldown: 3   # 0: Default value for Lambdas
+        ScaleOutCooldown: 2   # 0: Default value for Lambdas
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
+
   ########################
   # CompanyDomain
   ########################
